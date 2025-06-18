@@ -1,0 +1,176 @@
+
+
+CREATE TABLE alumnos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    apellido VARCHAR(255) NOT NULL,
+    dni VARCHAR(20) NOT NULL,
+    edad INT NOT NULL,
+    telefono VARCHAR(20),
+    tutor VARCHAR(255),
+    regular BOOLEAN NOT NULL,
+    curso_id BIGINT
+);
+
+CREATE TABLE profesores (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    apellido VARCHAR(255) NOT NULL,
+    dni VARCHAR(20) NOT NULL,
+    materia_que_dicta VARCHAR(255) NOT NULL,
+    curso_id BIGINT,
+    activo BOOLEAN NOT NULL
+);
+
+CREATE TABLE cursos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    profesor_id BIGINT,
+    alumno_id BIGINT,
+    FOREIGN KEY (profesor_id) REFERENCES profesores(id),
+    FOREIGN KEY (alumno_id) REFERENCES alumnos(id)
+);
+
+CREATE TABLE notas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    alumno_id BIGINT,
+    curso_id BIGINT,
+    materia VARCHAR(255) NOT NULL,
+    nota DECIMAL(5, 2) NOT NULL,
+    trimestre INT NOT NULL,
+    FOREIGN KEY (alumno_id) REFERENCES alumnos(id),
+    FOREIGN KEY (curso_id) REFERENCES cursos(id)
+);
+
+CREATE TABLE examenes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nota_id BIGINT,
+    examen_numero INT NOT NULL,
+    nota DECIMAL(5, 2) NOT NULL,
+    FOREIGN KEY (nota_id) REFERENCES notas(id)
+);
+
+CREATE TABLE boletines (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    alumno_id BIGINT,
+    curso_id BIGINT,
+    notas JSON,
+    FOREIGN KEY (alumno_id) REFERENCES alumnos(id),
+    FOREIGN KEY (curso_id) REFERENCES cursos(id)
+);
+
+
+
+
+
+
+
+
+
+create database boletines;
+use boletines;
+select * from profesores;
+CREATE TABLE profesores (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    apellido VARCHAR(255) NOT NULL,
+    dni VARCHAR(20) NOT NULL UNIQUE,
+    activo BOOLEAN NOT NULL
+);
+
+CREATE TABLE materias (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL UNIQUE
+);
+CREATE TABLE cursos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE curso_profesor_materia (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    curso_id BIGINT NOT NULL,
+    profesor_id BIGINT NOT NULL,
+    materia_id BIGINT NOT NULL,
+    FOREIGN KEY (curso_id) REFERENCES cursos(id),
+    FOREIGN KEY (profesor_id) REFERENCES profesores(id),
+    FOREIGN KEY (materia_id) REFERENCES materias(id),
+    UNIQUE (curso_id, materia_id) -- un curso solo puede tener un profesor por materia
+);
+
+CREATE TABLE alumnos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    apellido VARCHAR(255) NOT NULL,
+    dni VARCHAR(20) NOT NULL,
+    edad INT NOT NULL,
+    telefono VARCHAR(20),
+    tutor VARCHAR(255),
+    regular BOOLEAN NOT NULL,
+    curso_id BIGINT NOT NULL,
+    FOREIGN KEY (curso_id) REFERENCES cursos(id)
+);
+
+CREATE TABLE notas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    alumno_id BIGINT,
+    curso_id BIGINT,
+    materia_id BIGINT,
+    nota DECIMAL(5, 2) NOT NULL,
+    trimestre INT NOT NULL,
+    FOREIGN KEY (alumno_id) REFERENCES alumnos(id),
+    FOREIGN KEY (curso_id) REFERENCES cursos(id),
+    FOREIGN KEY (materia_id) REFERENCES materias(id)
+);
+
+
+INSERT INTO materias (nombre) VALUES
+('Matemáticas'),
+('Economía'),
+('Historia'),
+('Biología'),
+('Geografía'),
+('Lengua'),
+('Filosofía');
+
+INSERT INTO profesores (nombre, apellido, dni, activo) VALUES
+('Santiago', 'Maidana', '30123456', TRUE),
+('Fernando', 'Vargas', '31234567', TRUE),
+('Laura', 'Fernández', '32100001', TRUE),
+('Carlos', 'Pérez', '32100002', TRUE),
+('Ana', 'López', '32100003', TRUE),
+('Julieta', 'Martínez', '32100004', TRUE),
+('Mariano', 'Gómez', '32100005', TRUE),
+('Nicolás', 'Rojas', '32100006', TRUE),
+('María', 'Silva', '32100007', TRUE),
+('Esteban', 'Ramírez', '32100008', TRUE);
+
+INSERT INTO cursos (nombre) VALUES
+('Primero'),
+('Segundo'),
+('Tercero'),
+('Cuarto'),
+('Quinto');
+
+-- id_profesor, id_curso, id_materia
+INSERT INTO curso_profesor_materia (curso_id, profesor_id, materia_id) VALUES
+-- Santiago Maidana (Matemáticas)
+(1, 1, 1),
+(2, 1, 1),
+(3, 1, 1),
+(4, 1, 1),
+
+-- Fernando Vargas (Economía)
+(4, 2, 2),
+(5, 2, 2),
+
+-- Otros profesores
+(1, 3, 3), -- Historia
+(2, 4, 4), -- Biología
+(3, 5, 5), -- Geografía
+(4, 6, 6), -- Lengua
+(5, 7, 7), -- Filosofía
+(5, 8, 1), -- Matemáticas
+(2, 9, 3), -- Historia
+(3, 10, 6); -- Lengua
+

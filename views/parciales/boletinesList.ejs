@@ -1,0 +1,63 @@
+<style>
+  .table th, .table td {
+    vertical-align: middle;
+  }
+
+  .table td {
+    font-size: 0.95rem;
+  }
+
+  .low-score {
+    color: #dc3545; /* rojo Bootstrap */
+    font-weight: bold;
+  }
+
+  h2 {
+    margin-top: 30px;
+    color: #343a40;
+  }
+</style>
+
+
+<% if (boletines.length === 0) { %>
+  <div class="alert alert-warning mt-4">No se encontraron boletines que coincidan con la búsqueda.</div>
+<% } else { %>
+  <% let currentAlumno = null; let currentCurso = null; %>
+
+  <% boletines.forEach(b => { %>
+    <% if(currentAlumno !== b.alumno_nombre || currentCurso !== b.curso_nombre) { %>
+      <% if(currentAlumno !== null) { %></tbody></table><hr><% } %>
+
+      <h2>Boletín de <%= b.alumno_nombre %> <%= b.alumno_apellido %> - Curso: <%= b.curso_nombre %></h2>
+      <table class="table table-bordered table-striped">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Materia</th>
+            <th>1er Trimestre</th>
+            <th>2do Trimestre</th>
+            <th>3er Trimestre</th>
+            <th>Examen Diciembre</th>
+            <th>Examen Marzo</th>
+            <th>Promedio Final</th>
+          </tr>
+        </thead>
+        <tbody class="text-center align-middle">
+
+    <% } %>
+
+    <tr>
+      <td><%= b.materia_nombre %></td>
+      <td><%= b.trimestre_1 ?? '-' %></td>
+      <td><%= b.trimestre_2 ?? '-' %></td>
+      <td><%= b.trimestre_3 ?? '-' %></td>
+      <td><%= b.examen_dic ?? '-' %></td>
+      <td><%= b.examen_mar ?? '-' %></td>
+      <td><%= b.promedio_final ?? '-' %></td>
+    </tr>
+
+    <% currentAlumno = b.alumno_nombre; currentCurso = b.curso_nombre; %>
+
+  <% }) %>
+  </tbody>
+  </table>
+<% } %>

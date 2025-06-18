@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Alumno</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+
+    .login-container {
+      background-color: #fff;
+      padding: 2.5rem 3rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #4e4e4e;
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .form-label {
+      font-weight: bold;
+      color: #555;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      margin-bottom: 1.2rem;
+      padding: 1rem;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+      border-color: #2575fc;
+      box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.9rem;
+      background-color: #2575fc;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .btn-login:hover {
+      background-color: #1e61d8;
+    }
+
+    .text-muted {
+      margin-top: 1rem;
+      color: #888;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h1>Ingreso al Boletín</h1>
+    <form action="/loginAlumno" method="POST">
+      <div class="mb-3">
+        <label for="usuario" class="form-label">Usuario:</label>
+        <input type="text" name="usuario" class="form-control" required placeholder="Ingresa tu usuario">
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">DNI:</label>
+        <input type="password" name="password" class="form-control" required placeholder="Ingresa tu DNI">
+      </div>
+
+      <button type="submit" class="btn-login">Ingresar</button>
+    </form>
+
+    <p class="text-muted">¿Olvidaste tu contraseña? <a href="#">Recuperar aquí</a></p>
+  </div>
+
+</body>
+</html>
+

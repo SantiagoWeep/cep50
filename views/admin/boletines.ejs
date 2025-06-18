@@ -1,0 +1,20 @@
+<% 
+  let currentAlumno = null;
+  let currentCurso = null;
+%>
+
+
+<div id="boletines-container">
+  <%- include('../parciales/boletinesList', { boletines }) %>
+</div>
+
+<% if ((boletines || []).length >= 10) { %>
+  <div style="text-align: center; margin-top: 20px;">
+    <button id="ver-mas" class="btn btn-outline-dark btn-lg" data-offset="<%= offset + 10 %>">
+      Ver más <i class="bi bi-chevron-down"></i>
+    </button>
+
+  </div>
+<% } %>
+
+<script src="/js/adminBoletines.js"></script>

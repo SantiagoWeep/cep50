@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calificaciones</title>
+  <style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f4f7fa;
+    padding: 20px;
+  }
+
+  h1, h2, h3 {
+    font-weight: 600;
+    color: #333;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2em;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  thead tr:first-child {
+    background-color: #2f3e4e;
+    color: white;
+  }
+
+  thead tr:nth-child(2) {
+    background-color: #3e4f61;
+    color: white;
+  }
+
+  th, td {
+    padding: 10px 6px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  input[type="number"] {
+    width: 45px;
+    padding: 5px;
+    font-size: 13px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  input.nota {
+    width: 40px;
+  }
+
+  .promedio-trimestre {
+    background-color: #e6f3ff;
+    font-weight: bold;
+    border: 1px solid #b3d8ff;
+  }
+
+  .promedio-final {
+    background-color: #fff3db;
+    font-weight: bold;
+    border: 1px solid #ffd58a;
+  }
+
+  .examen {
+    background-color: #fcefe3;
+    border: 1px solid #ffd6a1;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 15px;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #1259a6;
+  }
+
+  input:disabled {
+    background-color: #eee !important;
+  }
+
+
+  /* Quitar flechas en inputs type="number" */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+  appearance: textfield;
+}
+
+</style>
+
+</head>
+<body>
+  <h1>Profesor: <%= nombreCompleto %></h1>
+  
+
+  <form method="POST">
+    <% cursos.forEach(curso => { %>
+      <h2>Curso: <%= curso.curso %></h2>
+        <div style="display: flex; justify-content: flex-end; width: 100%;">
+          <button type="submit" formaction="/calificaciones/guardarNotas">Guardar</button>
+        </div>
+      <% curso.materias.forEach(materia => { %>
+        <h3>Materia: <%= materia.materia_nombre %></h3>
+
+        <table>
+                <thead>
+          <tr>
+            <th>Alumno</th>
+            <% [1, 2, 3].forEach(tri => { %>
+              <th colspan="2">Trimestre <%= tri %></th>
+            <% }) %>
+            <th>Ex. Dic.</th>
+            <th>Ex. Mar.</th>
+            <th>Promedio Final</th>
+          </tr>
+          <tr>
+            <th></th>
+            <% [1, 2, 3].forEach(() => { %>
+              <th>Notas</th>
+              <th>Prom.</th>
+            <% }) %>
+            <th></th><th></th><th></th>
+          </tr>
+        </thead>
+
+          <tbody>
+            <% materia.alumnos.forEach(alumno => { %>
+              <tr>
+                <td><%= alumno.nombre %> <%= alumno.apellido %></td>
+
+                <% alumno.notas.forEach(nota => { %>
+                  <td>
+                    <% for (let i = 1; i <= 4; i++) { %>
+                      <input 
+                        type="number" 
+                        name="nota_<%= alumno.id %>_<%= curso.curso_id %>_<%= materia.materia_id %>_<%= nota.trimestre %>_<%= i %>"
+                        value="<%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '' %>" 
+                        placeholder="N<%= i %>" 
+                        min="0" max="10" step="0.1" 
+                        class="nota"
+                        style="width: 25px; display: inline-block; margin-right: 2px; font-size:11px;"
+                      >
+
+
+                    <% } %>
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      readonly 
+                      class="promedio-trimestre promedio-input" 
+                      data-alumno="<%= alumno.id %>" 
+                      data-materia="<%= materia.materia_id %>" 
+                      data-trimestre="<%= nota.trimestre %>" 
+                      step="0.01" min="0" max="10"
+                      value=""
+                    >
+                  </td>
+                <% }) %>
+
+                <td>
+                 <input 
+                  type="number"
+                  name="nota_<%= alumno.id %>_<%= curso.curso_id %>_<%= materia.materia_id %>_4_1"
+                  class="examen examen-dic promedio-input"
+                  value="<%= alumno.examen_dic !== undefined ? alumno.examen_dic : '' %>"
+                />
+                </td>
+                <td>
+                  <input 
+                  type="number"
+                  name="nota_<%= alumno.id %>_<%= curso.curso_id %>_<%= materia.materia_id %>_4_2"
+                  class="examen examen-mar promedio-input"
+                  value="<%= alumno.examen_mar !== undefined ? alumno.examen_mar : '' %>"
+                />
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    readonly 
+                    class="promedio-final promedio-input" 
+                    data-alumno="<%= alumno.id %>" 
+                    data-materia="<%= materia.materia_id %>" 
+                    step="0.01" min="0" max="10">
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% }) %>
+    <% }) %>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <button type="submit" formaction="/calificaciones/guardarNotas">Guardar</button>     
+    </div>
+
+  </form>
+
+  <script>
+  function truncar2dec(valor) {
+    return Math.floor(valor * 100) / 100;
+  }
+function calcularPromedios() {
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    const promedioInputs = tr.querySelectorAll('.promedio-trimestre');
+    const promedioFinalInput = tr.querySelector('.promedio-final');
+    const exDicInput = tr.querySelector('.examen-dic');
+    const exMarInput = tr.querySelector('.examen-mar');
+
+    let promedios = [];
+
+    promedioInputs.forEach(promInput => {
+      const trimestre = promInput.dataset.trimestre;
+      let notas = [];
+
+      for (let i = 1; i <= 4; i++) {
+        const inputNota = tr.querySelector(`input[name*="_${trimestre}_${i}"]`);
+        if (inputNota) {
+          let val = parseFloat(inputNota.value);
+          if (!isNaN(val)) {
+            notas.push(val);
+          }
+        }
+      }
+
+      if (notas.length > 0) {
+        let suma = notas.reduce((a, b) => a + b, 0);
+        let promedio = truncar2dec(suma / notas.length);
+        promInput.value = promedio.toFixed(2);
+        promedios.push(promedio);
+      } else {
+        promInput.value = '';
+      }
+    });
+
+    let promedioFinal = null;
+    if (promedios.length > 0) {
+      promedioFinal = truncar2dec(promedios.reduce((a, b) => a + b, 0) / promedios.length);
+    }
+
+    const exDicVal = parseFloat(exDicInput.value);
+    const exMarVal = parseFloat(exMarInput.value);
+    const usarExamen = (!isNaN(exDicVal) && exDicVal >= 6) || (!isNaN(exMarVal) && exMarVal >= 6);
+
+    if (usarExamen) {
+      const notaFinal = (!isNaN(exDicVal) && exDicVal >= 6) ? exDicVal : exMarVal;
+      promedioFinalInput.value = !isNaN(notaFinal) ? notaFinal.toFixed(2) : '';
+    } else if (typeof promedioFinal === 'number' && !isNaN(promedioFinal)) {
+      promedioFinalInput.value = promedioFinal.toFixed(2);
+    } else {
+      promedioFinalInput.value = '';
+    }
+
+    // Control de deshabilitar o no exámenes
+    if (!isNaN(promedioFinal) && promedioFinal >= 6) {
+      exDicInput.disabled = true;
+      exMarInput.disabled = true;
+      exDicInput.value = '';
+      exMarInput.value = '';
+    } else {
+      exDicInput.disabled = false;
+      exMarInput.disabled = false;
+    }
+  });
+}
+
+  // Escuchar cambios en notas y exámenes
+  document.querySelectorAll('input.nota, input.examen').forEach(input => {
+    input.addEventListener('input', calcularPromedios);
+  });
+
+  // Calcular al cargar
+  calcularPromedios();
+</script>
+
+</body>
+</html>

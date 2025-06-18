@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inicio</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #6e8296, #ffffff, #5c6a97);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #003366;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-weight: normal;
+      font-size: 1.5em;
+      color: #444;
+    }
+
+    .links {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .link-button {
+      text-decoration: none;
+      background: linear-gradient(45deg, #005cbf, #007bff);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background 0.3s ease, transform 0.2s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .link-button:hover {
+      background: linear-gradient(45deg, #003d80, #005cbf);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>¡Bienvenidos al panel principal del CEP 50!</h1>
+    <h2>¿Desea entrar como?</h2>
+
+    <div class="links">
+      <a class="link-button" href="/boletin">Alumno</a>
+      <a class="link-button" href="/administracion">Administrativo</a>
+      <a class="link-button" href="/calificaciones">Profesor</a>
+    </div>
+  </div>
+</body>
+</html>

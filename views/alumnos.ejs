@@ -1,0 +1,203 @@
+<div id="contenedor-tabla-alumnos">
+  <% Object.keys(alumnosPorCurso).forEach(curso => { %>
+    <h2 class="mt-4"><%= curso %> Año</h2>
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>DNI</th>
+            <th>Apellido</th>
+            <th>Nombres</th>
+            <th>Edad</th>
+            <th>Teléfono</th>
+            <th>Regular</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% alumnosPorCurso[curso].forEach(alumno => { %>
+            <tr>
+              <td><%= alumno.dni %></td>
+              <td><%= alumno.apellido %></td>
+              <td><%= alumno.nombre %></td>
+              <td><%= alumno.edad %></td>
+              <td><%= alumno.telefono %></td>
+              <td>
+                <div class="form-check form-switch">
+                  <input 
+                    class="form-check-input switch-regular" 
+                    type="checkbox" 
+                    role="switch" 
+                    data-id="<%= alumno.id %>" 
+                    <%= alumno.regular ? 'checked' : '' %>
+                  >
+                  <span class="ms-2 fw-bold" style="color: <%= alumno.regular ? 'green' : 'red' %>">
+                    <%= alumno.regular ? 'Sí' : 'No' %>
+                  </span>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#modalEditarAlumno<%= alumno.id %>">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#modalEliminarAlumno<%= alumno.id %>">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% }) %>
+</div>
+
+
+
+<!-- Modal Agregar Alumno -->
+<div class="modal fade" id="modalAgregarAlumno" tabindex="-1" aria-labelledby="modalAgregarAlumnoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form class="modal-content" method="POST" action="/alumnos">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAgregarAlumnoLabel">Agregar Alumno</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body row g-3">
+
+        <div class="col-md-6">
+          <label for="nombre" class="form-label">Nombre</label>
+          <input type="text" class="form-control" id="nombre" name="nombre" required>
+        </div>
+
+        <div class="col-md-6">
+          <label for="apellido" class="form-label">Apellido</label>
+          <input type="text" class="form-control" id="apellido" name="apellido" required>
+        </div>
+
+        <div class="col-md-6">
+          <label for="dni" class="form-label">DNI</label>
+          <input type="text" class="form-control" id="dni" name="dni" required>
+        </div>
+
+        <div class="col-md-3">
+          <label for="edad" class="form-label">Edad</label>
+          <input type="number" class="form-control" id="edad" name="edad" required>
+        </div>
+
+        <div class="col-md-3">
+          <label for="telefono" class="form-label">Teléfono</label>
+          <input type="text" class="form-control" id="telefono" name="telefono">
+        </div>
+
+        <div class="col-md-6">
+          <label for="tutor" class="form-label">Tutor</label>
+          <input type="text" class="form-control" id="tutor" name="tutor">
+        </div>
+
+        <div class="col-md-3">
+          <label for="curso_id" class="form-label">Curso</label>
+          <select class="form-select" name="curso_id" required>
+            <% cursos.forEach(curso => { %>
+              <option value="<%= curso.id %>"><%= curso.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="regular" name="regular" checked>
+            <label class="form-check-label" for="regular">Regular</label>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<% Object.values(alumnosPorCurso).flat().forEach(alumno => { %>
+  <!-- Modal Eliminar Alumno -->
+  <div class="modal fade" id="modalEliminarAlumno<%= alumno.id %>" tabindex="-1" aria-labelledby="modalEliminarAlumnoLabel<%= alumno.id %>" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" method="POST" action="/alumnos/eliminar/<%= alumno.id %>">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEliminarAlumnoLabel<%= alumno.id %>">Confirmar Eliminación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          ¿Estás seguro que deseas eliminar al alumno <strong><%= alumno.nombre %> <%= alumno.apellido %></strong>?
+            Se perderan todas la calificaciones del alumno.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Editar Alumno -->
+  <div class="modal fade" id="modalEditarAlumno<%= alumno.id %>" tabindex="-1" aria-labelledby="modalEditarAlumnoLabel<%= alumno.id %>" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <form class="modal-content" method="POST" action="/alumnos/editar/<%= alumno.id %>">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarAlumnoLabel<%= alumno.id %>">Editar Alumno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" name="nombre" value="<%= alumno.nombre %>" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Apellido</label>
+            <input type="text" class="form-control" name="apellido" value="<%= alumno.apellido %>" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">DNI</label>
+            <input type="text" class="form-control" name="dni" value="<%= alumno.dni %>" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Edad</label>
+            <input type="number" class="form-control" name="edad" value="<%= alumno.edad %>" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" name="telefono" value="<%= alumno.telefono %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Tutor</label>
+            <input type="text" class="form-control" name="tutor" value="<%= alumno.tutor %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Curso</label>
+            <select class="form-select" name="curso_id" required>
+              <% cursos.forEach(curso => { %>
+                <option value="<%= curso.id %>" <%= curso.id === alumno.curso_id ? 'selected' : '' %>><%= curso.nombre %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="regular" <%= alumno.regular ? 'checked' : '' %>>
+              <label class="form-check-label">Regular</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% }) %>
+
+
+<script src="/js/alumnos.js"></script>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notas por Alumno</title>
+  <style>
+   
+
+    h1 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    h2 {
+      display: flex;      
+      justify-content: end;
+    }
+
+    .encabezado-curso {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-top: 2em;
+      margin-bottom: 0.5em;
+    }
+
+    .encabezado-curso h2 {
+      margin: 0;
+      font-size: 1.4em;
+    }
+
+    .encabezado-curso .materia-profesor {
+      font-size: 1.1em;
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2em;
+    }
+
+    th, td {
+      padding: 6px;
+      border: 1px solid #ccc;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    thead tr:first-child th {
+      background-color: #cce5ff;
+      font-weight: bold;
+    }
+
+    .promedio-trimestral {
+      background-color: #fff3cd;
+      font-weight: bold;
+    }
+
+    .promedio-final {
+      background-color: #ffeeba;
+      font-weight: bold;
+    }
+
+    .nota {
+      width: 80px;
+      background-color: #f9f9f9;
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+
+    .nota-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      font-family: monospace;
+      font-size: 0.9em;
+      padding: 2px;
+    }
+
+    .nota-celda {
+      background-color: #ffffff;
+      border: 1px solid #ccc;
+      padding: 4px;
+    }
+
+    .promedio, .examen {
+      width: 50px;
+    }
+
+    /* Estilo general tabla */
+    .tabla-curso {
+      border: 2px solid #070303;
+      border-radius: 4px;
+      margin-bottom: 2em;
+    }
+
+    /* Colores por curso */
+    .tabla-curso-curso-primero {
+      border: 2px solid #0726d3;
+      background-color: #f3faff;
+    }
+
+    .tabla-curso-curso-segundo {
+      border: 2px solid #1d8d07;
+      background-color: #f9fff3;
+    }
+
+    .tabla-curso-curso-tercero {
+      border: 2px solid #d1c405;
+      background-color: #fffaf3;
+    }
+
+    .tabla-curso-curso-cuarto {
+      border: 2px solid #eb2b2b;
+      background-color: #fff5f5;
+    }
+
+    .tabla-curso-curso-quinto {
+      border: 2px solid #ac07ac;
+      background-color: #fcf0ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Notas Cargadas por los Profesores</h1>
+<div id="contenedorNotas">
+  <% cursos.forEach(curso => { %>
+    <h2>Curso: <%= curso.curso %></h2>
+
+    <% curso.materias.forEach(materia => { %>
+      <h3>Materia: <%= materia.materia_nombre %></h3>
+    <div class="profesor">Profesor: <%= materia.profesor_nombre %> <%= materia.profesor_apellido %></div>
+
+
+      <table class="tabla-curso-curso-<%= curso.curso.toLowerCase().replace(/\s/g, '-') %>">
+
+        <thead>
+  <tr>
+  <th>Alumno</th>
+  <% [1, 2, 3].forEach(tri => { %>
+    <th>Notas</th>
+    <th class="promedio-trimestral">Prom.</th>
+  <% }) %>
+
+  <th>Ex. Dic</th>
+  <th>Ex. Mar</th>
+  <th>Promedio Final</th>
+</tr>
+<tr>
+  <th></th>
+  <% [1, 2, 3].forEach(() => { %>
+  <th></th>
+  <th class="promedio-trimestral"></th>
+<% }) %>
+
+  <th></th><th></th><th class="promedio-final"></th>
+</tr>
+
+</thead>
+
+        <tbody>
+  <% materia.alumnos.forEach(alumno => { %>
+    <tr>
+      <td><%= alumno.nombre %> <%= alumno.apellido %></td>
+
+        <% alumno.notas.forEach(nota => { 
+  const notasValidas = Object.values(nota.calificaciones)
+    .map(n => parseFloat(n))
+    .filter(n => !isNaN(n));
+  const promedio = notasValidas.length 
+    ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length).toFixed(2)
+    : '';
+%>
+  <td class="nota">
+    <div class="nota-grid">
+      <% [1, 2, 3, 4].forEach(i => { %>
+        <div class="nota-celda"><%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '-' %></div>
+      <% }) %>
+    </div>
+  </td>
+  <td class="promedio-trimestral"><%= promedio %></td>
+<% }) %>
+
+
+
+
+
+
+
+      <td class="examen"><%= alumno.examen_dic !== undefined ? alumno.examen_dic : '-' %></td>
+      <td class="examen"><%= alumno.examen_mar !== undefined ? alumno.examen_mar : '-' %></td>
+
+      <td class="promedio-final">
+        <% 
+          const trimestrales = alumno.notas
+            .map(n => Object.values(n.calificaciones)
+              .map(x => parseFloat(x))
+              .filter(x => !isNaN(x))
+            )
+            .flat();
+
+          const avg = trimestrales.length 
+            ? trimestrales.reduce((a, b) => a + b, 0) / trimestrales.length
+            : null;
+
+          const exDic = parseFloat(alumno.examen_dic);
+          const exMar = parseFloat(alumno.examen_mar);
+
+          let final = null;
+
+          if (avg !== null && !isNaN(avg) && avg >= 6) {
+            final = avg;
+          } else if (!isNaN(exDic) && exDic >= 6) {
+            final = exDic;
+          } else if (!isNaN(exMar) && exMar >= 6) {
+            final = exMar;
+          } else if (avg !== null) {
+            final = avg;
+          }
+        %>
+        <%= (final !== null && !isNaN(final)) ? final.toFixed(2) : '-' %>
+      </td>
+    </tr>
+  <% }) %>
+</tbody>
+
+      </table>
+    <% }) %>
+  <% }) %>
+  </div>
+</body>
+</html>
+
+
+<script src="/js/adminNotas.js"></script>
