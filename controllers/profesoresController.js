@@ -80,10 +80,14 @@ exports.agregarProfesor = async (req, res) => {
     let profesorId;
 
     if (existing.length > 0) {
-      // Ya existe → usamos ese ID
       profesorId = existing[0].id;
+
+      // Actualizar datos del profesor si ya existía
+      await connection.query(
+        'UPDATE profesores SET nombre = ?, apellido = ?, activo = ? WHERE id = ?',
+        [nombre, apellido, activoValor, profesorId]
+      );
     } else {
-      // No existe → lo insertamos
       const [result] = await connection.query(
         'INSERT INTO profesores (nombre, apellido, dni, activo) VALUES (?, ?, ?, ?)',
         [nombre, apellido, dni, activoValor]
@@ -91,7 +95,17 @@ exports.agregarProfesor = async (req, res) => {
       profesorId = result.insertId;
     }
 
-    // Insertar en tabla intermedia (relación curso-profesor-materia)
+    // Verificar si la relación ya existe
+    const [relacionExiste] = await connection.query(
+      'SELECT id FROM curso_profesor_materia WHERE profesor_id = ? AND curso_id = ? AND materia_id = ?',
+      [profesorId, curso_id, materia_id]
+    );
+
+    if (relacionExiste.length > 0) {
+      throw new Error('Este profesor ya está asignado a esa materia en ese curso.');
+    }
+
+    // Insertar relación
     await connection.query(
       'INSERT INTO curso_profesor_materia (profesor_id, curso_id, materia_id) VALUES (?, ?, ?)',
       [profesorId, curso_id, materia_id]
@@ -102,11 +116,12 @@ exports.agregarProfesor = async (req, res) => {
   } catch (err) {
     await connection.rollback();
     console.error(err);
-    res.status(500).send('Error al agregar el profesor');
+    res.redirect(`/admin/profesores?error=${encodeURIComponent(err.message)}`);
   } finally {
     connection.release();
   }
 };
+
 
 
 
@@ -142,6 +157,8 @@ exports.buscarProfesores = async (req, res) => {
     res.status(500).send('Error al buscar profesores');
   }
 };
+
+
 exports.editarProfesor = async (req, res) => {
  const { profesor_id, nombre, apellido, dni, activo, curso_id, materia_id, relacion_id } = req.body;
 const activoValor = activo ? 1 : 0;
@@ -163,16 +180,16 @@ try {
     [nombre, apellido, dni, activoValor, profesor_id]
   );
 
-  // Verificar si la nueva combinación curso + materia ya existe para otro profesor
   const [conflicto] = await connection.query(
-    `SELECT id FROM curso_profesor_materia
-     WHERE curso_id = ? AND materia_id = ? AND id != ?`,
-    [curso_id, materia_id, relacion_id]
-  );
+  `SELECT id FROM curso_profesor_materia
+   WHERE curso_id = ? AND materia_id = ? AND profesor_id = ? AND id != ?`,
+  [curso_id, materia_id, profesor_id, relacion_id]
+);
 
-  if (conflicto.length > 0) {
-    throw new Error('Ya hay otro profesor asignado a ese curso y materia.');
-  }
+if (conflicto.length > 0) {
+  throw new Error('Este profesor ya está asignado a esa materia en ese curso.');
+}
+
 
   // Actualizar esa relación específica
   await connection.query(
