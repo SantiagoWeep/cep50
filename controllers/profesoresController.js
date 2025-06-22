@@ -125,6 +125,45 @@ exports.agregarProfesor = async (req, res) => {
 
 
 
+
+exports.editarProfesor = async (req, res) => {
+  const { profesor_id, nombre, apellido, dni, activo, curso_id, materia_id, relacion_id } = req.body;
+  const activoValor = activo ? 1 : 0;
+
+  const connection = await db.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    const [dniRepetido] = await connection.query(
+      'SELECT id FROM profesores WHERE dni = ? AND id != ?',
+      [dni, profesor_id]
+    );
+    if (dniRepetido.length > 0) {
+      throw new Error('Ya existe otro profesor con ese DNI.');
+    }
+
+    await connection.query(
+      'UPDATE profesores SET nombre = ?, apellido = ?, dni = ?, activo = ? WHERE id = ?',
+      [nombre, apellido, dni, activoValor, profesor_id]
+    );
+
+    await connection.query(
+      'UPDATE curso_profesor_materia SET curso_id = ?, materia_id = ? WHERE id = ?',
+      [curso_id, materia_id, relacion_id]
+    );
+
+    await connection.commit();
+    res.redirect('/profesores');
+  } catch (err) {
+    await connection.rollback();
+    res.redirect(`/profesores?error=${encodeURIComponent(err.message)}`);
+  } finally {
+    connection.release();
+  }
+};
+
+
+
 exports.buscarProfesores = async (req, res) => {
   const q = req.query.q || '';
 
@@ -156,56 +195,6 @@ exports.buscarProfesores = async (req, res) => {
     console.error(err);
     res.status(500).send('Error al buscar profesores');
   }
-};
-
-
-exports.editarProfesor = async (req, res) => {
- const { profesor_id, nombre, apellido, dni, activo, curso_id, materia_id, relacion_id } = req.body;
-const activoValor = activo ? 1 : 0;
-
-const connection = await db.getConnection();
-await connection.beginTransaction();
-
-try {
-  const [dniRepetido] = await connection.query(
-    'SELECT id FROM profesores WHERE dni = ? AND id != ?',
-    [dni, profesor_id]
-  );
-  if (dniRepetido.length > 0) {
-    throw new Error('Ya existe otro profesor con ese DNI.');
-  }
-
-  await connection.query(
-    'UPDATE profesores SET nombre = ?, apellido = ?, dni = ?, activo = ? WHERE id = ?',
-    [nombre, apellido, dni, activoValor, profesor_id]
-  );
-
-  const [conflicto] = await connection.query(
-  `SELECT id FROM curso_profesor_materia
-   WHERE curso_id = ? AND materia_id = ? AND profesor_id = ? AND id != ?`,
-  [curso_id, materia_id, profesor_id, relacion_id]
-);
-
-if (conflicto.length > 0) {
-  throw new Error('Este profesor ya está asignado a esa materia en ese curso.');
-}
-
-
-  // Actualizar esa relación específica
-  await connection.query(
-    'UPDATE curso_profesor_materia SET curso_id = ?, materia_id = ? WHERE id = ?',
-    [curso_id, materia_id, relacion_id]
-  );
-
-  await connection.commit();
-  res.redirect('/profesores');
-} catch (err) {
-  await connection.rollback();
-  res.redirect(`/profesores?error=${encodeURIComponent(err.message)}`);
-} finally {
-  connection.release();
-}
-
 };
 
 

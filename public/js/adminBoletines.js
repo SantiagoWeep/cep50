@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const html = await res.text();
+        contenedor.innerHTML = ''; 
         contenedor.insertAdjacentHTML('beforeend', html);
 
         if (!html.trim()) {
