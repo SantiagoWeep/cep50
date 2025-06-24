@@ -122,9 +122,12 @@ exports.guardarNotas = async (req, res) => {
         const notaTruncada = Math.round(nota * 100) / 100;
 
 
-      if (!isNaN(nota)) {
-        const notaTruncada = Math.round(nota * 100) / 100; // Trunca a 2 decimales
-        inserts.push([alumnoId, cursoId, materiaId, parseInt(trimestre), parseInt(numero), notaTruncada]);
+          if (
+        !isNaN(nota) &&
+        [1, 2, 3, 4].includes(parseInt(trimestre)) &&
+        [1, 2, 3, 4].includes(parseInt(numero))
+      ) {
+        inserts.push([alumnoId, cursoId, materiaId, parseInt(trimestre), parseInt(numero), nota]);
       }
 
     }
