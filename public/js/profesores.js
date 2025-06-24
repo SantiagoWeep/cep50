@@ -42,37 +42,55 @@ document.querySelectorAll('.switch-activo').forEach(switchInput => {
 
 //-----------------------------------agregar profe---------------------------------------
 
-
 document.getElementById('formAgregarProfesor').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const form = e.target;
-    const data = {
-      nombre: form.nombre.value,
-      apellido: form.apellido.value,
-      dni: form.dni.value,
-      curso_id: form.curso_id.value,
-      materia_id: form.materia_id.value,
-      activo: form.activo.checked
-    };
+  const form = e.target;
+  const data = {
+    nombre: form.nombre.value,
+    apellido: form.apellido.value,
+    dni: form.dni.value,
+    curso_id: form.curso_id.value,
+    materia_id: form.materia_id.value,
+    activo: form.activo.checked
+  };
 
-    try {
-      const res = await fetch('/admin/profesores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+  try {
+    const res = await fetch('/admin/profesores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+      await Swal.fire({
+        icon: 'success',
+        title: 'Profesor agregado',
+        text: 'El profesor se agregó correctamente.',
+        timer: 2000,
+        showConfirmButton: false
       });
-
-      if (res.ok) {
-        location.reload();
-      } else {
-        alert('Error al agregar profesor');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Error al conectar con el servidor');
+      location.reload();
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al agregar',
+        text: errData.message || 'No se pudo agregar el profesor.'
+      });
     }
-  });
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No se pudo conectar con el servidor.'
+    });
+  }
+});
+
+
+
 
 //-----------------------------------buscar profesores--------------------------//
 
@@ -119,7 +137,7 @@ const urlParams = new URLSearchParams(window.location.search);
   //------------------------eliminar profesor------------------------//
 
 
-  document.querySelectorAll('.btn-eliminar-profesor').forEach(btn => {
+document.querySelectorAll('.btn-eliminar-profesor').forEach(btn => {
   btn.addEventListener('click', async () => {
     const id = btn.dataset.id;
     const nombre = btn.dataset.nombre;
@@ -127,7 +145,7 @@ const urlParams = new URLSearchParams(window.location.search);
 
     const confirmacion = await Swal.fire({
       title: `¿Eliminar a ${nombre} ${apellido}?`,
-      text: "Esta acción no se puede deshacer",
+      text: "Se borraran todas las calificaciones caradas por este docente",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -142,11 +160,22 @@ const urlParams = new URLSearchParams(window.location.search);
 
         if (!res.ok) throw new Error();
 
-        await Swal.fire('¡Eliminado!', 'El profesor fue eliminado.', 'success');
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Eliminado!',
+          text: 'El profesor fue eliminado.',
+          timer: 2000,
+          showConfirmButton: false
+        });
         location.reload();
       } catch (error) {
-        Swal.fire('Error', 'No se pudo eliminar el profesor.', 'error');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar el profesor.'
+        });
       }
     }
   });
 });
+

@@ -1,38 +1,33 @@
 const db = require('../config/db');
 
+// mostrarNotas
 exports.mostrarNotas = async (req, res) => {
-  const cursoFiltro = req.query.curso || '';  // Recibe curso desde query string
-
-  // Cursos válidos para filtrar (igual a los que usás en la vista)
+  const cursoFiltro = req.query.curso || '';
   const cursosValidos = ["Primero", "Segundo", "Tercero", "Cuarto", "Quinto"];
-
-  // Si cursoFiltro no está en la lista o es vacío, no filtramos (traemos todos)
   const filtrarPorCurso = cursosValidos.includes(cursoFiltro);
 
   let query = `
-  SELECT 
-    c.id AS curso_id,
-    c.nombre AS curso_nombre,
-    m.id AS materia_id,
-    m.nombre AS materia_nombre,
-    p.nombre AS profesor_nombre,
-    p.apellido AS profesor_apellido,
-    a.id AS alumno_id,
-    a.nombre AS alumno_nombre,
-    a.apellido AS alumno_apellido,
-    n.trimestre,
-    n.numero,
-    n.nota
-  FROM curso_profesor_materia cpm
-  JOIN cursos c ON c.id = cpm.curso_id
-  JOIN materias m ON m.id = cpm.materia_id
-  JOIN profesores p ON p.id = cpm.profesor_id
-  JOIN alumnos a ON a.curso_id = c.id
-  LEFT JOIN notas n ON n.alumno_id = a.id AND n.curso_id = c.id AND n.materia_id = m.id
-`;
+    SELECT 
+      c.id AS curso_id,
+      c.nombre AS curso_nombre,
+      m.id AS materia_id,
+      m.nombre AS materia_nombre,
+      p.nombre AS profesor_nombre,
+      p.apellido AS profesor_apellido,
+      a.id AS alumno_id,
+      a.nombre AS alumno_nombre,
+      a.apellido AS alumno_apellido,
+      n.trimestre,
+      n.numero,
+      TRUNCATE(n.nota, 2) AS nota
+    FROM curso_profesor_materia cpm
+    JOIN cursos c ON c.id = cpm.curso_id
+    JOIN materias m ON m.id = cpm.materia_id
+    JOIN profesores p ON p.id = cpm.profesor_id
+    JOIN alumnos a ON a.curso_id = c.id
+    LEFT JOIN notas n ON n.alumno_id = a.id AND n.curso_id = c.id AND n.materia_id = m.id
+  `;
 
-
-  // Agregamos filtro por curso si corresponde
   if (filtrarPorCurso) {
     query += ` WHERE c.nombre = ? `;
   }
@@ -43,7 +38,6 @@ exports.mostrarNotas = async (req, res) => {
     const params = filtrarPorCurso ? [cursoFiltro] : [];
     const [results] = await db.query(query, params);
 
-    // Proceso para agrupar datos (igual que antes)
     const cursos = {};
 
     results.forEach(row => {
@@ -76,10 +70,10 @@ exports.mostrarNotas = async (req, res) => {
           apellido: row.alumno_apellido,
           notas: [1, 2, 3].map(tri => ({
             trimestre: tri,
-            calificaciones: {
-              1: null, 2: null, 3: null, 4: null
-            }
-          }))
+            calificaciones: {1: null, 2: null, 3: null, 4: null}
+          })),
+          examen_dic: null,
+          examen_mar: null,
         });
       }
 
@@ -88,41 +82,39 @@ exports.mostrarNotas = async (req, res) => {
       if (row.trimestre >= 1 && row.trimestre <= 3 && row.numero >= 1 && row.numero <= 4) {
         const trimestre = alumno.notas.find(n => n.trimestre === row.trimestre);
         if (trimestre) {
-          trimestre.calificaciones[row.numero] = row.nota;
+          trimestre.calificaciones[row.numero] = row.nota !== null ? Number(row.nota) : null;
         }
       }
 
       if (row.trimestre === 4) {
-        if (row.numero === 1) alumno.examen_dic = row.nota;
-        if (row.numero === 2) alumno.examen_mar = row.nota;
+        if (row.numero === 1) alumno.examen_dic = row.nota !== null ? Number(row.nota) : null;
+        if (row.numero === 2) alumno.examen_mar = row.nota !== null ? Number(row.nota) : null;
       }
     });
 
     const cursosArray = Object.values(cursos).map(c => ({
-  curso_id: c.curso_id,
-  curso: c.curso,
-  materias: Object.values(c.materias).map(m => ({
-    materia_id: m.materia_id,
-    materia_nombre: m.materia_nombre,
-    profesor_nombre: m.profesor_nombre,
-    profesor_apellido: m.profesor_apellido,
-    alumnos: Array.from(m.alumnos.values())
-  }))
-}));
-
+      curso_id: c.curso_id,
+      curso: c.curso,
+      materias: Object.values(c.materias).map(m => ({
+        materia_id: m.materia_id,
+        materia_nombre: m.materia_nombre,
+        profesor_nombre: m.profesor_nombre,
+        profesor_apellido: m.profesor_apellido,
+        alumnos: Array.from(m.alumnos.values())
+      }))
+    }));
 
     res.render('admin/notas', {
-  tipoBusqueda: 'materia o nombre',
-  idInputBusqueda: 'input-busqueda',
-  textoBotonAgregar: '',
-  idModalAgregar: '',
-  mostrarFiltroCurso: true, // Asegúrate de definir esta variable
-  cursoSeleccionado: cursoFiltro,
-  cursos: cursosArray,
-  search: req.query.q || '',
-  offset: 0,
-});
-
+      tipoBusqueda: 'materia o nombre',
+      idInputBusqueda: 'input-busqueda',
+      textoBotonAgregar: '',
+      idModalAgregar: '',
+      mostrarFiltroCurso: true,
+      cursoSeleccionado: cursoFiltro,
+      cursos: cursosArray,
+      search: req.query.q || '',
+      offset: 0,
+    });
 
   } catch (err) {
     console.error('Error al obtener notas para admin:', err);
@@ -147,7 +139,7 @@ exports.buscarNotas = async (req, res) => {
         a.apellido AS alumno_apellido,
         n.trimestre,
         n.numero,
-        n.nota
+        TRUNCATE(n.nota, 2) AS nota
       FROM curso_profesor_materia cpm
       JOIN cursos c ON c.id = cpm.curso_id
       JOIN materias m ON m.id = cpm.materia_id
@@ -194,7 +186,9 @@ exports.buscarNotas = async (req, res) => {
           notas: [1, 2, 3].map(tri => ({
             trimestre: tri,
             calificaciones: { 1: null, 2: null, 3: null, 4: null }
-          }))
+          })),
+          examen_dic: null,
+          examen_mar: null,
         });
       }
 
@@ -203,13 +197,13 @@ exports.buscarNotas = async (req, res) => {
       if (row.trimestre >= 1 && row.trimestre <= 3 && row.numero >= 1 && row.numero <= 4) {
         const trimestre = alumno.notas.find(n => n.trimestre === row.trimestre);
         if (trimestre) {
-          trimestre.calificaciones[row.numero] = row.nota;
+          trimestre.calificaciones[row.numero] = row.nota !== null ? Number(row.nota) : null;
         }
       }
 
       if (row.trimestre === 4) {
-        if (row.numero === 1) alumno.examen_dic = row.nota;
-        if (row.numero === 2) alumno.examen_mar = row.nota;
+        if (row.numero === 1) alumno.examen_dic = row.nota !== null ? Number(row.nota) : null;
+        if (row.numero === 2) alumno.examen_mar = row.nota !== null ? Number(row.nota) : null;
       }
     });
 

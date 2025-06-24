@@ -45,23 +45,21 @@ exports.insertarAlumno = async (req, res) => {
   const { nombre, apellido, dni, edad, telefono, tutor, curso_id, regular } = req.body;
 
   try {
-      await db.query(`
+    await db.query(`
       INSERT INTO alumnos (nombre, apellido, dni, edad, telefono, tutor, regular, curso_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       nombre, apellido, dni, edad, telefono || null, tutor || null,
-      regular === 'on', // checkbox
-      curso_id
+      regular === 'on', curso_id
     ]);
 
-
-
-    res.redirect('/administracion');
+    res.redirect('/administracion?success=Alumno agregado correctamente');
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error al agregar el alumno');
+    res.redirect('/administracion?error=Error al agregar el alumno');
   }
-}; 
+};
+
 
 
 exports.editarAlumno = async (req, res) => {
@@ -78,27 +76,35 @@ exports.editarAlumno = async (req, res) => {
       curso_id, regular === 'on', id
     ]);
 
-    res.redirect('/administracion');
+    res.redirect('/administracion?success=Alumno editado correctamente');
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error al editar el alumno');
+    res.redirect('/administracion?error=Error al editar el alumno');
   }
 };
+
+
 exports.eliminarAlumno = async (req, res) => {
   const { id } = req.params;
-  try {
-    // Primero eliminás las notas del alumno
-    await db.query(`DELETE FROM notas WHERE alumno_id = ?`, [id]);
 
-    // Luego eliminás el alumno
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'ID de alumno no proporcionado' });
+  }
+
+  try {
+    await db.query(`DELETE FROM notas WHERE alumno_id = ?`, [id]);
+    await db.query(`DELETE FROM boletines WHERE alumno_id = ?`, [id]);
+    await db.query(`DELETE FROM examenes_especiales WHERE alumno_id = ?`, [id]);
     await db.query(`DELETE FROM alumnos WHERE id = ?`, [id]);
 
-    res.redirect('/administracion');
+    return res.status(200).json({ success: true, message: 'Alumno eliminado correctamente' });
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al eliminar el alumno');
+    console.error('Error al eliminar alumno:', error);
+    return res.status(500).json({ success: false, message: 'Ocurrió un error al eliminar el alumno' });
   }
 };
+
+
 
 
 

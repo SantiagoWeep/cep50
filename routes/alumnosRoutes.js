@@ -9,7 +9,7 @@ router.post('/alumnos', verifyAdministracion, alumnosController.insertarAlumno);
 
 // Nuevas rutas protegidas
 router.post('/alumnos/editar/:id', verifyAdministracion, alumnosController.editarAlumno);
-router.post('/alumnos/eliminar/:id', verifyAdministracion, alumnosController.eliminarAlumno);
+router.delete('/alumnos/eliminar/:id', alumnosController.eliminarAlumno);
 router.put('/alumnos/:id', verifyAdministracion, alumnosController.actualizarEstadoRegular);
 router.get('/admin/buscar-alumnos', verifyAdministracion, alumnosController.buscarAlumnos);
 

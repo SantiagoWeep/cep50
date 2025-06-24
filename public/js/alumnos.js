@@ -1,12 +1,70 @@
- function eliminarAlumno(id) {
-    if (confirm('¿Estás seguro de eliminar este alumno?')) {
+function eliminarAlumno(id, nombreCompleto) {
+  Swal.fire({
+    title: '¿Estás seguro?',
+    html: `Vas a eliminar al alumno <strong>${nombreCompleto}</strong> y todos sus registros.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
       fetch(`/alumnos/eliminar/${id}`, {
         method: 'DELETE'
       })
-      .then(res => res.ok ? location.reload() : alert('Error al eliminar'))
-      .catch(err => alert('Error de conexión'));
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Eliminado',
+            text: data.message,
+            timer: 2000,
+            showConfirmButton: false
+          }).then(() => {
+            // Recarga sin parámetros para evitar alerta doble
+            window.location.href = window.location.pathname;
+          });
+        } else {
+          Swal.fire('Error', data.message || 'No se pudo eliminar al alumno.', 'error');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        Swal.fire('Error', 'Error de conexión con el servidor.', 'error');
+      });
     }
+  });
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const success = params.get('success');
+  const error = params.get('error');
+
+  if (success) {
+    Swal.fire({
+      icon: 'success',
+      title: '¡Éxito!',
+      text: success,
+      timer: 2500,
+      showConfirmButton: false
+    });
   }
+
+  if (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error
+    });
+  }
+});
+
+
 
   //-----------------------------------alumno regular?-------------------//
 

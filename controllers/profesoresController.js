@@ -71,7 +71,6 @@ exports.agregarProfesor = async (req, res) => {
   await connection.beginTransaction();
 
   try {
-    // Verificar si ya existe el profesor por DNI
     const [existing] = await connection.query(
       'SELECT id FROM profesores WHERE dni = ?',
       [dni]
@@ -81,8 +80,6 @@ exports.agregarProfesor = async (req, res) => {
 
     if (existing.length > 0) {
       profesorId = existing[0].id;
-
-      // Actualizar datos del profesor si ya existía
       await connection.query(
         'UPDATE profesores SET nombre = ?, apellido = ?, activo = ? WHERE id = ?',
         [nombre, apellido, activoValor, profesorId]
@@ -95,7 +92,6 @@ exports.agregarProfesor = async (req, res) => {
       profesorId = result.insertId;
     }
 
-    // Verificar si la relación ya existe
     const [relacionExiste] = await connection.query(
       'SELECT id FROM curso_profesor_materia WHERE profesor_id = ? AND curso_id = ? AND materia_id = ?',
       [profesorId, curso_id, materia_id]
@@ -105,18 +101,17 @@ exports.agregarProfesor = async (req, res) => {
       throw new Error('Este profesor ya está asignado a esa materia en ese curso.');
     }
 
-    // Insertar relación
     await connection.query(
       'INSERT INTO curso_profesor_materia (profesor_id, curso_id, materia_id) VALUES (?, ?, ?)',
       [profesorId, curso_id, materia_id]
     );
 
     await connection.commit();
-    res.redirect('/admin/profesores');
+    res.json({ success: true, message: 'Profesor agregado correctamente' });
   } catch (err) {
     await connection.rollback();
     console.error(err);
-    res.redirect(`/admin/profesores?error=${encodeURIComponent(err.message)}`);
+    res.status(400).json({ success: false, message: err.message });
   } finally {
     connection.release();
   }
@@ -164,6 +159,37 @@ exports.editarProfesor = async (req, res) => {
 
 
 
+
+
+exports.eliminarProfesor = async (req, res) => {
+  const { id } = req.params;
+
+  const connection = await db.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    // Eliminar primero la relación (por la FK)
+    await connection.query(
+      'DELETE FROM curso_profesor_materia WHERE profesor_id = ?',
+      [id]
+    );
+
+    // Luego eliminar el profesor
+    await connection.query('DELETE FROM profesores WHERE id = ?', [id]);
+
+    await connection.commit();
+    res.json({ success: true });
+  } catch (err) {
+    await connection.rollback();
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Error al eliminar el profesor' });
+  } finally {
+    connection.release();
+  }
+};
+
+
+
 exports.buscarProfesores = async (req, res) => {
   const q = req.query.q || '';
 
@@ -194,33 +220,5 @@ exports.buscarProfesores = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Error al buscar profesores');
-  }
-};
-
-
-exports.eliminarProfesor = async (req, res) => {
-  const { id } = req.params;
-
-  const connection = await db.getConnection();
-  await connection.beginTransaction();
-
-  try {
-    // Eliminar primero la relación (por la FK)
-    await connection.query(
-      'DELETE FROM curso_profesor_materia WHERE profesor_id = ?',
-      [id]
-    );
-
-    // Luego eliminar el profesor
-    await connection.query('DELETE FROM profesores WHERE id = ?', [id]);
-
-    await connection.commit();
-    res.json({ success: true });
-  } catch (err) {
-    await connection.rollback();
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Error al eliminar el profesor' });
-  } finally {
-    connection.release();
   }
 };

@@ -108,6 +108,9 @@ exports.mostrarListaAlumnos = async (req, res) => {
     res.status(500).send('Error en base de datos');
   }
 };
+
+
+
 exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
@@ -116,10 +119,14 @@ exports.guardarNotas = async (req, res) => {
     if (key.startsWith('nota_')) {
       const [, alumnoId, cursoId, materiaId, trimestre, numero] = key.split('_');
       const nota = parseFloat(data[key]);
+        const notaTruncada = Math.round(nota * 100) / 100;
+
 
       if (!isNaN(nota)) {
-        inserts.push([alumnoId, cursoId, materiaId, parseInt(trimestre), parseInt(numero), nota]);
+        const notaTruncada = Math.round(nota * 100) / 100; // Trunca a 2 decimales
+        inserts.push([alumnoId, cursoId, materiaId, parseInt(trimestre), parseInt(numero), notaTruncada]);
       }
+
     }
   }
 

@@ -8,84 +8,94 @@
       <h3>Materia: <%= materia.materia_nombre %></h3>
       <div class="profesor">Profesor: <%= materia.profesor_nombre %> <%= materia.profesor_apellido %></div>
 
-      <table class="tabla-curso-curso-<%= curso.curso.toLowerCase().replace(/\s/g, '-') %>">
-        <thead>
-          <tr>
-            <th>Alumno</th>
-            <% [1, 2, 3].forEach(tri => { %>
-              <th>Notas</th>
-              <th class="promedio-trimestral">Prom.</th>
-            <% }) %>
-            <th>Ex. Dic</th>
-            <th>Ex. Mar</th>
-            <th>Promedio Final</th>
-          </tr>
-          <tr>
-            <th></th>
-            <% [1, 2, 3].forEach(() => { %>
-              <th></th>
-              <th class="promedio-trimestral"></th>
-            <% }) %>
-            <th></th><th></th><th class="promedio-final"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% materia.alumnos.forEach(alumno => { %>
-            <tr>
-              <td><%= alumno.nombre %> <%= alumno.apellido %></td>
-              <% alumno.notas.forEach(nota => {
-                const notasValidas = Object.values(nota.calificaciones)
-                  .map(n => parseFloat(n))
-                  .filter(n => !isNaN(n));
-                const promedio = notasValidas.length 
-                  ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length).toFixed(2)
-                  : '';
-              %>
-                <td class="nota">
-                  <div class="nota-grid">
-                    <% [1, 2, 3, 4].forEach(i => { %>
-                      <div class="nota-celda"><%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '-' %></div>
-                    <% }) %>
-                  </div>
-                </td>
-                <td class="promedio-trimestral"><%= promedio %></td>
+      <%
+  function truncateTo2Decimals(num) {
+    return Math.floor(num * 100) / 100;
+  }
+  function truncateTo2DecimalsStr(num) {
+    return truncateTo2Decimals(num).toFixed(2);
+  }
+%>
+
+<table class="tabla-curso-curso-<%= curso.curso.toLowerCase().replace(/\s/g, '-') %>">
+  <thead>
+    <tr>
+      <th>Alumno</th>
+      <% [1, 2, 3].forEach(tri => { %>
+        <th>Notas</th>
+        <th class="promedio-trimestral">Prom.</th>
+      <% }) %>
+      <th>Ex. Dic</th>
+      <th>Ex. Mar</th>
+      <th>Promedio Final</th>
+    </tr>
+    <tr>
+      <th></th>
+      <% [1, 2, 3].forEach(() => { %>
+        <th></th>
+        <th class="promedio-trimestral"></th>
+      <% }) %>
+      <th></th><th></th><th class="promedio-final"></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% materia.alumnos.forEach(alumno => { %>
+      <tr>
+        <td><%= alumno.nombre %> <%= alumno.apellido %></td>
+        <% alumno.notas.forEach(nota => {
+          const notasValidas = Object.values(nota.calificaciones)
+            .map(n => parseFloat(n))
+            .filter(n => !isNaN(n));
+          const promedio = notasValidas.length 
+            ? truncateTo2DecimalsStr(notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length)
+            : '';
+        %>
+          <td class="nota">
+            <div class="nota-grid">
+              <% [1, 2, 3, 4].forEach(i => { %>
+                <div class="nota-celda"><%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '-' %></div>
               <% }) %>
-              <td class="examen"><%= alumno.examen_dic ?? '-' %></td>
-              <td class="examen"><%= alumno.examen_mar ?? '-' %></td>
-              <td class="promedio-final">
-                <%
-                  const trimestrales = alumno.notas
-                    .map(n => Object.values(n.calificaciones)
-                      .map(x => parseFloat(x))
-                      .filter(x => !isNaN(x))
-                    )
-                    .flat();
+            </div>
+          </td>
+          <td class="promedio-trimestral"><%= promedio %></td>
+        <% }) %>
+        <td class="examen"><%= alumno.examen_dic ?? '-' %></td>
+        <td class="examen"><%= alumno.examen_mar ?? '-' %></td>
+        <td class="promedio-final">
+          <%
+            const trimestrales = alumno.notas
+              .map(n => Object.values(n.calificaciones)
+                .map(x => parseFloat(x))
+                .filter(x => !isNaN(x))
+              )
+              .flat();
 
-                  const avg = trimestrales.length 
-                    ? trimestrales.reduce((a, b) => a + b, 0) / trimestrales.length
-                    : null;
+            const avg = trimestrales.length 
+              ? trimestrales.reduce((a, b) => a + b, 0) / trimestrales.length
+              : null;
 
-                  const exDic = parseFloat(alumno.examen_dic);
-                  const exMar = parseFloat(alumno.examen_mar);
+            const exDic = parseFloat(alumno.examen_dic);
+            const exMar = parseFloat(alumno.examen_mar);
 
-                  let final = null;
+            let final = null;
 
-                  if (avg !== null && !isNaN(avg) && avg >= 6) {
-                    final = avg;
-                  } else if (!isNaN(exDic) && exDic >= 6) {
-                    final = exDic;
-                  } else if (!isNaN(exMar) && exMar >= 6) {
-                    final = exMar;
-                  } else if (avg !== null) {
-                    final = avg;
-                  }
-                %>
-                <%= (final !== null && !isNaN(final)) ? final.toFixed(2) : '-' %>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+            if (avg !== null && !isNaN(avg) && avg >= 6) {
+              final = avg;
+            } else if (!isNaN(exDic) && exDic >= 6) {
+              final = exDic;
+            } else if (!isNaN(exMar) && exMar >= 6) {
+              final = exMar;
+            } else if (avg !== null) {
+              final = avg;
+            }
+          %>
+          <%= (final !== null && !isNaN(final)) ? truncateTo2DecimalsStr(final) : '-' %>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
     <% }) %>
   <% }) %>
 <% } %>
