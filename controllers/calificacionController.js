@@ -178,8 +178,13 @@ exports.guardarNotas = async (req, res) => {
             ELSE AVG(CASE WHEN trimestre IN (1, 2, 3) THEN nota END)
           END
         , 2) AS promedio_final
-      FROM notas
-      GROUP BY alumno_id, curso_id, materia_id
+      FROM notas n
+      WHERE EXISTS (
+        SELECT 1
+        FROM alumnos a
+        WHERE a.id = n.alumno_id AND a.curso_id = n.curso_id
+      )
+      GROUP BY n.alumno_id, n.curso_id, n.materia_id
       ON DUPLICATE KEY UPDATE 
         trimestre_1 = VALUES(trimestre_1),
         trimestre_2 = VALUES(trimestre_2),
