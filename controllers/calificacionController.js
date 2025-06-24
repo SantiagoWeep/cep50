@@ -153,45 +153,41 @@ exports.guardarNotas = async (req, res) => {
     // Ahora actualizamos los boletines para reflejar lo guardado
     const updateBoletinesQuery = `
       INSERT INTO boletines (
-        alumno_id, curso_id, materia_id,
-        trimestre_1, trimestre_2, trimestre_3,
-        examen_dic, examen_mar, promedio_final
-      )
-      SELECT 
-        alumno_id,
-        curso_id,
-        materia_id,
-        TRUNCATE(AVG(CASE WHEN trimestre = 1 THEN nota END), 2) AS trimestre_1,
-        TRUNCATE(AVG(CASE WHEN trimestre = 2 THEN nota END), 2) AS trimestre_2,
-        TRUNCATE(AVG(CASE WHEN trimestre = 3 THEN nota END), 2) AS trimestre_3,
-        MAX(CASE WHEN trimestre = 4 AND numero = 1 THEN nota END) AS examen_dic,
-        MAX(CASE WHEN trimestre = 4 AND numero = 2 THEN nota END) AS examen_mar,
-        
-        TRUNCATE(
-          CASE
-            WHEN AVG(CASE WHEN trimestre IN (1, 2, 3) THEN nota END) >= 6 THEN 
-              AVG(CASE WHEN trimestre IN (1, 2, 3) THEN nota END)
-            WHEN MAX(CASE WHEN trimestre = 4 AND numero = 1 THEN nota END) >= 6 THEN 
-              MAX(CASE WHEN trimestre = 4 AND numero = 1 THEN nota END)
-            WHEN MAX(CASE WHEN trimestre = 4 AND numero = 2 THEN nota END) >= 6 THEN 
-              MAX(CASE WHEN trimestre = 4 AND numero = 2 THEN nota END)
-            ELSE AVG(CASE WHEN trimestre IN (1, 2, 3) THEN nota END)
-          END
-        , 2) AS promedio_final
-      FROM notas n
-      WHERE EXISTS (
-        SELECT 1
-        FROM alumnos a
-        WHERE a.id = n.alumno_id AND a.curso_id = n.curso_id
-      )
-      GROUP BY n.alumno_id, n.curso_id, n.materia_id
-      ON DUPLICATE KEY UPDATE 
-        trimestre_1 = VALUES(trimestre_1),
-        trimestre_2 = VALUES(trimestre_2),
-        trimestre_3 = VALUES(trimestre_3),
-        examen_dic = VALUES(examen_dic),
-        examen_mar = VALUES(examen_mar),
-        promedio_final = VALUES(promedio_final);
+  alumno_id, curso_id, materia_id,
+  trimestre_1, trimestre_2, trimestre_3,
+  examen_dic, examen_mar, promedio_final
+)
+SELECT 
+  n.alumno_id,
+  n.curso_id,
+  n.materia_id,
+  TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
+  TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
+  TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
+  MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
+  MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
+  TRUNCATE(
+    CASE
+      WHEN AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END) >= 6 THEN 
+        AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+      WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
+        MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
+      WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
+        MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
+      ELSE AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+    END
+  , 2)
+FROM notas n
+JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
+GROUP BY n.alumno_id, n.curso_id, n.materia_id
+ON DUPLICATE KEY UPDATE 
+  trimestre_1 = VALUES(trimestre_1),
+  trimestre_2 = VALUES(trimestre_2),
+  trimestre_3 = VALUES(trimestre_3),
+  examen_dic = VALUES(examen_dic),
+  examen_mar = VALUES(examen_mar),
+  promedio_final = VALUES(promedio_final);
+
     `;
 
     await db.query(updateBoletinesQuery);
