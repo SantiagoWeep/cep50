@@ -8,7 +8,7 @@
   <%- include('../parciales/boletinesList', { boletines }) %>
 </div>
 
-<% if ((boletines || []).length >= 10) { %>
+<% if ((boletines || []).length >= 30) { %>
   <div style="text-align: center; margin-top: 20px;">
     <button id="ver-mas" class="btn btn-outline-dark btn-lg" data-offset="<%= offset + 10 %>">
       Ver más <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
