@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             verMasBtn.style.display = 'block';
             verMasBtn.disabled = false;
             verMasBtn.innerText = 'Ver más';
-            verMasBtn.setAttribute('data-offset', '10');
+            verMasBtn.setAttribute('data-offset', '30');
           }
         } catch (e) {
           console.error('Error al recargar boletines:', e);
