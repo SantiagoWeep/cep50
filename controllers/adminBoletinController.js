@@ -3,7 +3,7 @@ const db = require('../config/db');
 
 exports.mostrarBoletines = async (req, res) => {
   const offset = parseInt(req.query.offset || 0);
-  const limit = 10;
+  const limit = 30;
   const curso = req.query.curso || ''; // ← obtener filtro por curso si viene
 
   try {
