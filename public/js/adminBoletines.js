@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.disabled = true;
           btn.innerText = 'No hay más boletines';
         } else {
-          btn.setAttribute('data-offset', offset + 10);
+          btn.setAttribute('data-offset', offset + 30);
           btn.disabled = false;
           btn.textContent = 'Ver más';
         }
