@@ -1,14 +1,14 @@
 const db = require('../config/db'); // o tu ORM/configuración
 exports.mostrarAlumnos = async (req, res) => {
   try {
- const [alumnos] = await db.query(`
-  SELECT alumnos.*, cursos.nombre AS curso_nombre, cursos.orden 
-  FROM alumnos 
-  JOIN cursos ON alumnos.curso_id = cursos.id 
-  ORDER BY cursos.orden, alumnos.apellido
-`);
+    const [alumnos] = await db.query(`
+      SELECT alumnos.*, cursos.nombre AS curso_nombre, cursos.orden 
+      FROM alumnos 
+      JOIN cursos ON alumnos.curso_id = cursos.id 
+      ORDER BY cursos.orden, alumnos.apellido
+    `);
 
-  const [cursos] = await db.query(`SELECT * FROM cursos ORDER BY orden`);
+    const [cursos] = await db.query(`SELECT * FROM cursos ORDER BY orden`);
 
     // Agrupar alumnos por curso
     const alumnosPorCurso = {};
@@ -19,23 +19,20 @@ exports.mostrarAlumnos = async (req, res) => {
       alumnosPorCurso[alumno.curso_nombre].push(alumno);
     });
 
-   res.render('alumnos', {
-  layout: 'administracion',
-  alumnosPorCurso,
-  cursos,
-  textoBotonAgregar: 'Agregar Alumno',
-  tipoBusqueda: 'DNI o Nombre',
-  idInputBusqueda: 'inputBuscarAlumno',
-  idModalAgregar: 'modalAgregarAlumno',
-  mostrarFiltroCurso: false // o simplemente no lo pongas
-});
-
-
-
+    res.render('alumnos', {
+      layout: 'administracion',
+      alumnosPorCurso,
+      cursos,
+      textoBotonAgregar: 'Agregar Alumno',
+      tipoBusqueda: 'DNI o Nombre',
+      idInputBusqueda: 'inputBuscarAlumno',
+      idModalAgregar: 'modalAgregarAlumno',
+      mostrarFiltroCurso: false
+    });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Error al obtener los alumnos');
+    console.error('💥 Error en mostrarAlumnos:', error); // Log completo
+    res.status(500).send('💥 Error al obtener los alumnos: ' + error.message);
   }
 };
 
