@@ -1,11 +1,14 @@
-const mysql = require('mysql2/promise'); // OJO: nota el /promise
+const mysql = require('mysql2/promise');
 
-const connection = mysql.createPool({
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME
 });
 
-
-module.exports = connection;
+// Exporta un objeto con método query que llama a pool.query
+module.exports = {
+  query: (...params) => pool.query(...params),
+  execute: (...params) => pool.execute(...params)
+};
