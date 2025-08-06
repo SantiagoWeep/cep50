@@ -172,6 +172,7 @@ input[type="number"] {
                       data-alumno="<%= alumno.id %>" 
                       data-materia="<%= materia.materia_id %>" 
                       data-trimestre="<%= nota.trimestre %>" 
+                      data-curso="<%= curso.curso_id %>"
                       step="0.01" min="0" max="10"
                       value=""
                     >
@@ -201,6 +202,7 @@ input[type="number"] {
                     class="promedio-final promedio-input" 
                     data-alumno="<%= alumno.id %>" 
                     data-materia="<%= materia.materia_id %>" 
+                    data-curso="<%= curso.curso_id %>"
                     step="0.01" min="0" max="10">
                 </td>
               </tr>
@@ -215,76 +217,80 @@ input[type="number"] {
     </div>
 
   </form>
-
-  <script>
+<script>
   function truncar2dec(valor) {
     return Math.floor(valor * 100) / 100;
   }
-function calcularPromedios() {
-  document.querySelectorAll('tbody tr').forEach(tr => {
-    const promedioInputs = tr.querySelectorAll('.promedio-trimestre');
-    const promedioFinalInput = tr.querySelector('.promedio-final');
-    const exDicInput = tr.querySelector('.examen-dic');
-    const exMarInput = tr.querySelector('.examen-mar');
 
-    let promedios = [];
+  function calcularPromedios() {
+    document.querySelectorAll('tbody tr').forEach(tr => {
+      const promedioInputs = tr.querySelectorAll('.promedio-trimestre');
+      const promedioFinalInput = tr.querySelector('.promedio-final');
+      const exDicInput = tr.querySelector('.examen-dic');
+      const exMarInput = tr.querySelector('.examen-mar');
 
-    promedioInputs.forEach(promInput => {
-      const trimestre = promInput.dataset.trimestre;
-      let notas = [];
+      let promedios = [];
 
-      for (let i = 1; i <= 4; i++) {
-        const inputNota = tr.querySelector(`input[name*="_${trimestre}_${i}"]`);
-        if (inputNota) {
-          let val = parseFloat(inputNota.value);
-          if (!isNaN(val)) {
-            notas.push(val);
+      promedioInputs.forEach(promInput => {
+        const trimestre = promInput.dataset.trimestre;
+        const alumnoId = promInput.dataset.alumno;
+        const materiaId = promInput.dataset.materia;
+        const cursoId = promInput.dataset.curso;
+        let notas = [];
+
+        for (let i = 1; i <= 4; i++) {
+          const name = `nota_${alumnoId}_${cursoId}_${materiaId}_${trimestre}_${i}`;
+          const inputNota = tr.querySelector(`input[name="${name}"]`);
+          if (inputNota) {
+            let val = parseFloat(inputNota.value);
+            if (!isNaN(val)) {
+              notas.push(val);
+            }
           }
         }
+
+        if (notas.length > 0) {
+          let suma = notas.reduce((a, b) => a + b, 0);
+          let promedio = truncar2dec(suma / notas.length);
+          promInput.value = promedio.toFixed(2);
+          promedios.push(promedio);
+        } else {
+          promInput.value = '';
+        }
+      });
+
+      let promedioFinal = null;
+      if (promedios.length > 0) {
+        promedioFinal = truncar2dec(promedios.reduce((a, b) => a + b, 0) / promedios.length);
       }
 
-      if (notas.length > 0) {
-        let suma = notas.reduce((a, b) => a + b, 0);
-        let promedio = truncar2dec(suma / notas.length);
-        promInput.value = promedio.toFixed(2);
-        promedios.push(promedio);
+      const exDicVal = parseFloat(exDicInput.value);
+      const exMarVal = parseFloat(exMarInput.value);
+      const usarExamen = (!isNaN(exDicVal) && exDicVal >= 6) || (!isNaN(exMarVal) && exMarVal >= 6);
+
+      if (usarExamen) {
+        const notaFinal = (!isNaN(exDicVal) && exDicVal >= 6) ? exDicVal : exMarVal;
+        promedioFinalInput.value = !isNaN(notaFinal) ? notaFinal.toFixed(2) : '';
+      } else if (typeof promedioFinal === 'number' && !isNaN(promedioFinal)) {
+        promedioFinalInput.value = promedioFinal.toFixed(2);
       } else {
-        promInput.value = '';
+        promedioFinalInput.value = '';
+      }
+
+      // Control de habilitar/deshabilitar exámenes
+      if (!isNaN(promedioFinal) && promedioFinal >= 6) {
+        exDicInput.disabled = true;
+        exMarInput.disabled = true;
+        exDicInput.value = '';
+        exMarInput.value = '';
+      } else {
+        exDicInput.disabled = false;
+        exMarInput.disabled = false;
       }
     });
+  }
 
-    let promedioFinal = null;
-    if (promedios.length > 0) {
-      promedioFinal = truncar2dec(promedios.reduce((a, b) => a + b, 0) / promedios.length);
-    }
-
-    const exDicVal = parseFloat(exDicInput.value);
-    const exMarVal = parseFloat(exMarInput.value);
-    const usarExamen = (!isNaN(exDicVal) && exDicVal >= 6) || (!isNaN(exMarVal) && exMarVal >= 6);
-
-    if (usarExamen) {
-      const notaFinal = (!isNaN(exDicVal) && exDicVal >= 6) ? exDicVal : exMarVal;
-      promedioFinalInput.value = !isNaN(notaFinal) ? notaFinal.toFixed(2) : '';
-    } else if (typeof promedioFinal === 'number' && !isNaN(promedioFinal)) {
-      promedioFinalInput.value = promedioFinal.toFixed(2);
-    } else {
-      promedioFinalInput.value = '';
-    }
-
-    // Control de deshabilitar o no exámenes
-    if (!isNaN(promedioFinal) && promedioFinal >= 6) {
-      exDicInput.disabled = true;
-      exMarInput.disabled = true;
-      exDicInput.value = '';
-      exMarInput.value = '';
-    } else {
-      exDicInput.disabled = false;
-      exMarInput.disabled = false;
-    }
-  });
-}
-
-  // Escuchar cambios en notas y exámenes
+  // Escuchar cambios
   document.querySelectorAll('input.nota, input.examen').forEach(input => {
     input.addEventListener('input', calcularPromedios);
   });

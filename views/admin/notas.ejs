@@ -52,7 +52,7 @@
     }
 
     .promedio-trimestral {
-      background-color: #fff3cd;
+      background-color: #f8f6f1;
       font-weight: bold;
     }
 
@@ -169,7 +169,7 @@
     .map(n => parseFloat(n))
     .filter(n => !isNaN(n));
   const promedio = notasValidas.length 
-    ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length).toFixed(2)
+    ? Math.trunc((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 100) / 100
     : '';
 %>
   <td class="nota">
@@ -219,7 +219,7 @@
             final = avg;
           }
         %>
-        <%= (final !== null && !isNaN(final)) ? final.toFixed(2) : '-' %>
+        <%= (final !== null && !isNaN(final)) ? (Math.trunc(final * 100) / 100) : '-' %>
       </td>
     </tr>
   <% }) %>

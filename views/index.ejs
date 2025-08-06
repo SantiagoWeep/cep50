@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inicio</title>
   <style>
     body {
@@ -17,7 +18,6 @@
       align-items: center;
       height: 100vh;
       text-align: center;
-    
     }
 
     @keyframes gradientBG {
@@ -28,7 +28,7 @@
 
     .container {
       max-width: 1200px;
-      width: 100%;
+      width: 90%;
       padding: 2rem;
     }
 
@@ -62,11 +62,49 @@
       font-weight: bold;
       transition: background 0.3s ease, transform 0.2s ease;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      min-width: 150px;
+      text-align: center;
     }
 
     .link-button:hover {
       background: linear-gradient(45deg, #003d80, #005cbf);
       transform: scale(1.05);
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+
+      h2 {
+        font-size: 1.2em;
+      }
+
+      .link-button {
+        padding: 10px 20px;
+        font-size: 0.95em;
+        min-width: 120px;
+      }
+
+      .links {
+        flex-direction: column;
+        gap: 15px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6em;
+      }
+
+      h2 {
+        font-size: 1em;
+      }
+
+      .container {
+        padding: 1rem;
+      }
     }
   </style>
 </head>
