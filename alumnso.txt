@@ -1,0 +1,124 @@
+----+-------------------+----------------+------------+------+-------------+---------------------+---------+----------+
+| id | nombre            | apellido       | dni        | edad | telefono    | tutor               | regular | curso_id |
++----+-------------------+----------------+------------+------+-------------+---------------------+---------+----------+
+|  2 | Yonatan catriel   | Venega         | 48355209   |   17 | 3755-555556 | Venega Omar         |       1 |        5 |
+|  3 | Daniela Nicol     | Aquino         | 48355236   |   17 | 3764-178975 | Cáceres Raquel      |       1 |        5 |
+|  4 | Ilai Armando      | Carísimo       | 48610629   |   17 | 3764-897015 | Rivero Eva          |       1 |        5 |
+|  5 | Florencia         | Rosa           | 48355234   |   17 | 3764-156595 | Rosa Alfredo        |       1 |        5 |
+|  6 | Claudia Ester     | Valdez         | 48090182   |   17 | 3764-527675 | Delgado Teresa      |       1 |        5 |
+|  7 | Dalma             | Cáceres        | 48359449   |   17 | 3743-637719 | Benítez Matilde     |       1 |        5 |
+|  8 | Juliana Itatí     | Venega         | 48355208   |   17 | 3764-174097 | Venega Fabio Omar   |       1 |        5 |
+|  9 | Valeria Alejandra | Colman         | 49278538   |   15 | 3764-742179 | Colman Roque        |       1 |        3 |
+| 10 | Brahian Ezequiel  | Chejovieck     | 48950318   |   15 | 3764-365656 | Villán María        |       1 |        3 |
+| 11 | Juan Manuel       | Martínez       | 40000000   |   15 | 3765-164700 | Martínez Patricia   |       1 |        3 |
+| 12 | Juan David        | Núñez          | 40000001   |   15 | 3764605028  | Núñez Mariela       |       1 |        3 |
+| 13 | Osvaldo rodrigo   | Smitt          | 49476121   |   16 | 3755-555555 | Olivera Mirta       |       1 |        3 |
+| 14 | Milagros Itatí    | Yung           | 49661010   |   15 | 3764-084226 | Yung Javier         |       1 |        3 |
+| 15 | Santiago          | Doi            | 40000002   |   15 | 3755-555557 | Doi Pablo           |       1 |        3 |
+| 16 | Luciana           | Toth           | 51113029   |   13 | 3764-151212 | Benítez María       |       1 |        1 |
+| 17 | Alexander         | Flores         | 51455319   |   13 | 1161121311  | Ortigoza Ester      |       1 |        1 |
+| 18 | Santiago          | Pombo          | 52065973   |   13 | 3755-555558 | Pombo Ramón         |       1 |        1 |
+| 19 | Fátima            | Piris Da Silva | 48742014   |   17 | 3764-387847 | Santa Cruz Alicia   |       1 |        1 |
+| 20 | Gabriela          | Cáceres        | 51427339   |   13 | 3743-605302 | Nimet Rocío         |       1 |        1 |
+| 21 | Ludmila           | Silvero        | 51160792   |   13 | 1130-354937 | Petta Adriana       |       1 |        1 |
+| 22 | Ulises            | Rivero         | 50480961   |   14 | 3764-864296 | Arévalo Roxana      |       1 |        1 |
+| 23 | Daniela Aylen     | Viera          | 51305597   |   13 | 3764-734245 | Ayala Andrea        |       1 |        1 |
+| 24 | Luz Maria         | González       | 95535387   |   13 | 3765-017167 | Suares Rosana       |       1 |        1 |
+| 25 | Agustina Abigail  | Pensotti       | 52063443   |   13 | 3765-504830 | Francisco Daniela   |       1 |        1 |
+| 26 | Diego Alberto     | Nuñez          | 49476127   |   15 | 3746-126158 | Núñez Soledad       |       1 |        3 |
+| 27 | Lautaro Ramiro    | Morel          | 50480945   |   14 | 3764-151992 | Pombo María         |       1 |        2 |
+| 28 | Rita Milagros     | Cáceres        | 50480913   |   13 | 3755-555559 | Cáceres Fidel       |       1 |        2 |
+| 29 | Gabriel           | González       | 3765083557 |   14 | 3765-083557 | González Guillermo  |       1 |        2 |
+| 30 | Santiago Benezer  | Rivero         | 50480981   |   14 | 3764-151992 | Rivero Luis         |       1 |        2 |
+| 31 | Yohana            | Centurión      | 52306119   |   12 | 3764-527675 | Delgado teresa      |       1 |        1 |
+| 32 | Ziro              | Aguirre        | 40000003   |   16 | 3764-866449 | Aguirre Jorge       |       1 |        2 |
+| 33 | Facundo           | Gonzalez       | 50480994   |   14 | 3764-278744 | Carísimo Lorena     |       1 |        2 |
+| 34 | Dilan             | Barboza        | 50480932   |   14 | 3765-528098 | Toledo Sandra       |       1 |        2 |
+| 35 | Ricardo           | Smitt          | 40000004   |   14 | 3755-555550 | Smitt Dora          |       1 |        2 |
+| 36 | Joaquín           | Caballero      | 50480920   |   14 | 3764-571459 | Caballero Adolfo    |       1 |        2 |
+| 37 | Bruno Alexander   | Yung           | 50480973   |   14 | 3755-555551 | Yung Javier         |       1 |        2 |
+| 38 | Rocío Maitena     | Morinigo       | 48950345   |   16 | 3764-339341 | Czerevín Claudia    |       1 |        4 |
+| 39 | Estefanía         | Portela        | 48610612   |   16 | 3764-171775 | Francisco Julia     |       1 |        4 |
+| 40 | Luciano Ariel     | León           | 49659717   |   16 | 3765-113873 | Silva Estela        |       1 |        4 |
+| 41 | Luz Angélica      | Fonsceca       | 48637950   |   17 | 1138-018324 | Fonsceca Raquel     |       1 |        4 |
+| 42 | Gaudalupe Sara    | Pensotti       | 49476117   |   16 | 3765-504830 | Pensotti Ruben      |       1 |        4 |
+| 43 | Mayra             | Benitez        | 48742125   |   17 | 3755-50000  | Benitez A.          |       1 |        4 |
++----+-------------------+----------------+------------+------+-------------+---------------------+---------+----------+
+
+
+
+mysql> select * from profesores;
++----+-----------+------------+----------+--------+
+| id | nombre    | apellido   | dni      | activo |
++----+-----------+------------+----------+--------+
+|  1 | Santiago  | Maidana    | 36094825 |      1 |
+|  2 | Andrea    | Acuña      | 31871771 |      1 |
+|  3 | Nelsón    | Bogarín    | 23625325 |      1 |
+|  4 | Gustavo   | Brizuela   | 25338175 |      1 |
+|  6 | Gonzalez  | Leonardo   | 29284524 |      1 |
+|  7 | Millan    | Wiltón     | 30861406 |      1 |
+|  8 | María     | Gómez      | 33131945 |      1 |
+|  9 | Fernando  | Imbach     | 32873947 |      1 |
+| 10 | Mariette  | Nake       | 30380421 |      1 |
+| 11 | Rogelio   | Oztryzniuk | 30578754 |      1 |
+| 12 | Nidia     | Pelinski   | 24989437 |      1 |
+| 13 | Helen     | Riedmaier  | 27477907 |      1 |
+| 14 | Elisa     | Rojas      | 32560868 |      1 |
+| 15 | Natalia   | Bar        | 35964442 |      0 |
+| 16 | Natalia   | Bar        | 35694315 |      1 |
+| 18 | María     | Tarnowski  | 32288334 |      1 |
+| 22 | Francisco | Cardozo    | 41303238 |      1 |
+| 23 | Julio     | Britez     | 40410855 |      1 |
+| 25 | Itatí     | Cristaldo  | 32228026 |      1 |
+| 26 | Diego     | Ruiz Diaz  | 29634831 |      1 |
+| 27 | Ángela    | Storms     | 31112970 |      1 |
+| 29 | Yamila    | Rotta      | 38064423 |      1 |
++----+-----------+------------+----------+--------+
+22 rows in set (0.00 sec)
+
+
+mysql> select * from materias;
++----+-------------------+
+| id | nombre            |
++----+-------------------+
+| 19 | Agroecología      |
+| 13 | Artística         |
+|  4 | Biología          |
+| 17 | Ciudadanía        |
+| 24 | Derecho           |
+|  2 | Economía          |
+| 10 | Ed. Física        |
+| 16 | EDI               |
+|  7 | Filosofía         |
+| 11 | Fisica            |
+| 15 | Físico Química    |
+|  9 | Form. Ética       |
+| 26 | Form. Profesional |
+|  5 | Geografía         |
+| 18 | Granja            |
+| 23 | Higiene           |
+|  3 | Historia          |
+|  6 | Lengua            |
+|  1 | Matemáticas       |
+| 12 | Portugés          |
+| 20 | Proyecto          |
+| 27 | Psicología        |
+| 21 | Química           |
+| 22 | Química Aplicada  |
+| 25 | Salud y Ambiente  |
+|  8 | Tecnología        |
+| 14 | TIC               |
++----+-------------------+
+27 rows in set (0.00 sec)
+
+mysql>mysql> select *from cursos;
++----+---------+-------+
+| id | nombre  | orden |
++----+---------+-------+
+|  1 | Primero |     1 |
+|  2 | Segundo |     2 |
+|  3 | Tercero |     3 |
+|  4 | Cuarto  |     4 |
+|  5 | Quinto  |     5 |
++----+---------+-------+
+5 rows in set (0.00 sec)

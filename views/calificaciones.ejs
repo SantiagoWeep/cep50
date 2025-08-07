@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Calificaciones</title>
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+
   <style>
   body {
     font-family: 'Segoe UI', sans-serif;
@@ -110,6 +112,15 @@ input[type="number"] {
 
 </head>
 <body>
+
+
+<% if (typeof mensaje !== 'undefined') { %>
+  <div class="alert alert-<%= tipoMensaje %> alert-dismissible fade show" role="alert">
+    <%= mensaje %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+  </div>
+<% } %>
+
   <h1>Profesor: <%= nombreCompleto %></h1>
   
 
@@ -217,6 +228,26 @@ input[type="number"] {
     </div>
 
   </form>
+  <div class="modal fade" id="confirmExitModal" tabindex="-1" aria-labelledby="confirmExitLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmExitLabel">Cambios sin guardar</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        Hay cambios sin guardar. ¿Querés salir sin guardar?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="confirmExitBtn" type="button" class="btn btn-danger">Salir sin guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script>
   function truncar2dec(valor) {
     return Math.floor(valor * 100) / 100;
@@ -232,37 +263,43 @@ input[type="number"] {
       let promedios = [];
 
       promedioInputs.forEach(promInput => {
-        const trimestre = promInput.dataset.trimestre;
-        const alumnoId = promInput.dataset.alumno;
-        const materiaId = promInput.dataset.materia;
-        const cursoId = promInput.dataset.curso;
-        let notas = [];
+      const trimestre = promInput.dataset.trimestre;
+      const alumnoId = promInput.dataset.alumno;
+      const materiaId = promInput.dataset.materia;
+      const cursoId = promInput.dataset.curso;
+      let notas = [];
 
-        for (let i = 1; i <= 4; i++) {
-          const name = `nota_${alumnoId}_${cursoId}_${materiaId}_${trimestre}_${i}`;
-          const inputNota = tr.querySelector(`input[name="${name}"]`);
-          if (inputNota) {
-            let val = parseFloat(inputNota.value);
+      for (let i = 1; i <= 4; i++) {
+        const name = `nota_${alumnoId}_${cursoId}_${materiaId}_${trimestre}_${i}`;
+        const inputNota = tr.querySelector(`input[name="${name}"]`);
+        if (inputNota) {
+          // Solo considerar valores válidos y que no sean vacíos
+          const valStr = inputNota.value.trim();
+          if (valStr !== '') {
+            const val = parseFloat(valStr);
             if (!isNaN(val)) {
               notas.push(val);
             }
           }
+          // NO cambiar inputNota.value aquí para respetar lo que puso el usuario
         }
-
-        if (notas.length > 0) {
-          let suma = notas.reduce((a, b) => a + b, 0);
-          let promedio = truncar2dec(suma / notas.length);
-          promInput.value = promedio.toFixed(2);
-          promedios.push(promedio);
-        } else {
-          promInput.value = '';
-        }
-      });
-
-      let promedioFinal = null;
-      if (promedios.length > 0) {
-        promedioFinal = truncar2dec(promedios.reduce((a, b) => a + b, 0) / promedios.length);
       }
+
+      if (notas.length > 0) {
+        const suma = notas.reduce((a, b) => a + b, 0);
+        const promedio = truncar2dec(suma / notas.length);
+        promInput.value = promedio.toFixed(2);
+        promedios.push(promedio);
+      } else {
+        promInput.value = '';
+      }
+    });
+
+    let promedioFinal = null;
+    if (promedios.length > 0) {
+      promedioFinal = truncar2dec(promedios.reduce((a, b) => a + b, 0) / promedios.length);
+    }
+
 
       const exDicVal = parseFloat(exDicInput.value);
       const exMarVal = parseFloat(exMarInput.value);
@@ -297,6 +334,60 @@ input[type="number"] {
 
   // Calcular al cargar
   calcularPromedios();
+
+
+  
+  setTimeout(() => {
+    const alert = document.querySelector('.alert');
+    if (alert) {
+      const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+      bsAlert.close();
+    }
+  }, 4000);
+
+  
+  if (window.location.search.includes('guardado=1')) {
+    const newUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+  }
+
+let hayCambios = false;
+
+  document.querySelectorAll('input.nota, input.examen').forEach(input => {
+    input.addEventListener('input', () => {
+      hayCambios = true;
+    });
+  });
+
+  document.querySelector('form').addEventListener('submit', () => {
+    hayCambios = false;
+  });
+
+  // Evento nativo obligatorio para cerrar pestaña
+  window.addEventListener('beforeunload', (e) => {
+    if (hayCambios) {
+      e.preventDefault();
+      e.returnValue = ''; // muestra alerta nativa
+    }
+  });
+
+  // Para links o botones internos que cambian página, interceptamos:
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('click', (event) => {
+      // Ejemplo: solo para enlaces externos o que cambian página, adaptá a tus necesidades
+      const href = el.getAttribute('href');
+      if (hayCambios && href && href !== '#' && !el.closest('form')) {
+        event.preventDefault();
+        const modal = new bootstrap.Modal(document.getElementById('confirmExitModal'));
+        modal.show();
+
+        document.getElementById('confirmExitBtn').onclick = () => {
+          hayCambios = false;
+          window.location = href; // redirige tras confirmar
+        };
+      }
+    });
+  });
 </script>
 
 </body>
