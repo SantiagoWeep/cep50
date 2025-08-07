@@ -351,42 +351,27 @@ input[type="number"] {
     window.history.replaceState({}, document.title, newUrl);
   }
 
-let hayCambios = false;
 
+  let hayCambios = false;
+
+  // Detectar cambios en inputs relevantes
   document.querySelectorAll('input.nota, input.examen').forEach(input => {
     input.addEventListener('input', () => {
       hayCambios = true;
     });
   });
 
+  // Cuando se envía el formulario, ya no hay cambios pendientes
   document.querySelector('form').addEventListener('submit', () => {
     hayCambios = false;
   });
 
-  // Evento nativo obligatorio para cerrar pestaña
+  // Aviso antes de salir si hay cambios sin guardar
   window.addEventListener('beforeunload', (e) => {
     if (hayCambios) {
       e.preventDefault();
-      e.returnValue = ''; // muestra alerta nativa
+      e.returnValue = ''; // Necesario para Chrome mostrar alerta
     }
-  });
-
-  // Para links o botones internos que cambian página, interceptamos:
-  document.querySelectorAll('a, button').forEach(el => {
-    el.addEventListener('click', (event) => {
-      // Ejemplo: solo para enlaces externos o que cambian página, adaptá a tus necesidades
-      const href = el.getAttribute('href');
-      if (hayCambios && href && href !== '#' && !el.closest('form')) {
-        event.preventDefault();
-        const modal = new bootstrap.Modal(document.getElementById('confirmExitModal'));
-        modal.show();
-
-        document.getElementById('confirmExitBtn').onclick = () => {
-          hayCambios = false;
-          window.location = href; // redirige tras confirmar
-        };
-      }
-    });
   });
 </script>
 
