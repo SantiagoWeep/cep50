@@ -120,7 +120,18 @@ input[type="number"] {
     <%= mensaje %>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
   </div>
+
+  <script>
+    setTimeout(() => {
+      const alert = document.querySelector('.alert');
+      if (alert) {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+        bsAlert.close();
+      }
+    }, 4000);
+  </script>
 <% } %>
+
 
   <h1>Profesor: <%= nombreCompleto %></h1>
   
@@ -338,13 +349,6 @@ input[type="number"] {
 
 
   
-  setTimeout(() => {
-    const alert = document.querySelector('.alert');
-    if (alert) {
-      const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-      bsAlert.close();
-    }
-  }, 4000);
 
   
   if (window.location.search.includes('guardado=1')) {
