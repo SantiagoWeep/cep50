@@ -17,45 +17,41 @@ exports.mostrarBoletin = async (req, res) => {
       JOIN curso_profesor_materia cpm ON cpm.materia_id = m.id
       WHERE cpm.curso_id = ?
     `;
-    const [materiasResults] = await db.query(queryMaterias, [alumno.curso_id]);
-
-    // 3. Obtener notas del alumno
-    const queryNotas = `
+   const queryNotas = `
       SELECT 
-        n.materia_id,
+        m.id AS materia_id,
+        m.nombre AS materia_nombre,
         TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2) AS trimestre_1,
         TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2) AS trimestre_2,
         TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2) AS trimestre_3,
         MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) AS examen_dic,
         MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) AS examen_mar
-      FROM notas n
-      WHERE n.alumno_id = ? AND n.curso_id = ?
-      GROUP BY n.materia_id
+      FROM curso_profesor_materia cpm
+      JOIN materias m ON m.id = cpm.materia_id
+      LEFT JOIN notas n ON n.materia_id = m.id AND n.alumno_id = ? AND n.curso_id = ?
+      WHERE cpm.curso_id = ?
+      GROUP BY m.id
     `;
-    const [notasResults] = await db.query(queryNotas, [alumnoId, alumno.curso_id]);
 
-    // Organizar las materias y notas
+    const [notasResults] = await db.query(queryNotas, [alumnoId, alumno.curso_id, alumno.curso_id]);
+
     const materias = {};
     notasResults.forEach(row => {
       materias[row.materia_id] = {
-        nombre: '',  // Se llenará luego
-        notas: {
-          T1: row.trimestre_1 ?? '-',
-          T2: row.trimestre_2 ?? '-',
-          T3: row.trimestre_3 ?? '-',
-          ExDic: row.examen_dic ?? '-',
-          ExMar: row.examen_mar ?? '-'
-        }
+        nombre: row.materia_nombre,
+       notas: {
+        T1: row.trimestre_1 != null ? row.trimestre_1 : '-',
+        T2: row.trimestre_2 != null ? row.trimestre_2 : '-',
+        T3: row.trimestre_3 != null ? row.trimestre_3 : '-',
+        ExDic: row.examen_dic != null ? row.examen_dic : '-',
+        ExMar: row.examen_mar != null ? row.examen_mar : '-'
+      }
+
       };
     });
 
-    // Asignar nombres de materias
-    materiasResults.forEach(row => {
-      if (materias[row.materia_id]) {
-        materias[row.materia_id].nombre = row.materia;
-      }
-    });
 
+  
     // Calcular promedio final por materia
     Object.values(materias).forEach(materia => {
       const trimestres = [materia.notas.T1, materia.notas.T2, materia.notas.T3]

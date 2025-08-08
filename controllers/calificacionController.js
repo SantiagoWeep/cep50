@@ -161,8 +161,8 @@ exports.guardarNotas = async (req, res) => {
         WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
       `, [del.alumnoId, del.cursoId, del.materiaId, del.trimestre, del.numero]);
     }
-
-    if (inserts.length > 0) {
+// Verifica si hay notas válidas para insertar
+if (inserts.length > 0) {
       const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
         `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE)`
       ).join(',');
@@ -178,7 +178,19 @@ exports.guardarNotas = async (req, res) => {
       await db.query(queryNotas);
     }
 
-    // Actualizamos boletines igual que antes
+    // Crear boletines vacíos si no existen
+    const ensureBoletinesQuery = `
+      INSERT IGNORE INTO boletines (alumno_id, curso_id, materia_id)
+      SELECT 
+        a.id AS alumno_id,
+        a.curso_id,
+        cpm.materia_id
+      FROM alumnos a
+      JOIN curso_profesor_materia cpm ON cpm.curso_id = a.curso_id
+    `;
+    await db.query(ensureBoletinesQuery);
+
+    // Actualizar boletines con promedios y exámenes
     const updateBoletinesQuery = `
       INSERT INTO boletines (
         alumno_id, curso_id, materia_id,
@@ -218,6 +230,7 @@ exports.guardarNotas = async (req, res) => {
     `;
 
     await db.query(updateBoletinesQuery);
+
 
     res.redirect('/calificaciones?guardado=1');
 
