@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="/images/pedilink-icono.png" type="image/png">
   <title>Login Profesor</title>
- <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
       background: #f0f2f5;
@@ -32,8 +31,7 @@
     .btn-login {
       width: 100%;
     }
-
-     .text-muted {
+    .text-muted {
       margin-top: 1rem;
       color: #888;
       font-size: 12px;
@@ -48,8 +46,8 @@
     <h2 class="login-title">Bienvenido Profesor</h2>
     <form action="/login" method="POST" novalidate>
       <div class="mb-3">
-        <label for="usuario" class="form-label">Usuario</label>
-        <input type="text" id="usuario" name="usuario" class="form-control" placeholder="123" required autofocus />
+        <label for="usuario" class="form-label">DNI</label>
+        <input type="text" id="usuario" name="usuario" class="form-control" placeholder="12345678" required autofocus />
       </div>
       <div class="mb-4">
         <label for="password" class="form-label">Contraseña</label>
@@ -57,7 +55,6 @@
       </div>
       <button type="submit" class="btn btn-primary btn-login">Ingresar</button>
     </form>
-    
     <p class="text-muted">¿Olvidaste tu contraseña? <a href="#">Recuperar aquí</a></p>
   </div>
 </body>
