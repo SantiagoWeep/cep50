@@ -83,7 +83,7 @@ exports.mostrarBoletin = async (req, res) => {
         }
       }
       
-      materia.promedioFinal = promedioFinal !== null ? truncar(promedioFinal, 2).toFixed(2) : '-';
+      materia.promedioFinal = promedioFinal !== null ? truncar(promedioFinal, 2) : '-';
 
     });
 
