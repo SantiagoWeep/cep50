@@ -87,15 +87,25 @@ exports.mostrarListaAlumnos = async (req, res) => {
       }
     });
 
-    const cursosArray = Object.values(cursos).map(c => ({
-      curso_id: c.curso_id,
-      curso: c.curso,
-      materias: Object.values(c.materias).map(m => ({
-        materia_id: m.materia_id,
-        materia_nombre: m.materia_nombre,
-        alumnos: Array.from(m.alumnos.values())
-      }))
-    }));
+   const cursosArray = Object.values(cursos).map(c => ({
+  curso_id: c.curso_id,
+  curso: c.curso,
+  materias: Object.values(c.materias).map(m => ({
+    materia_id: m.materia_id,
+    materia_nombre: m.materia_nombre,
+    alumnos: Array.from(m.alumnos.values()).sort((a, b) => {
+      const apellidoA = a.apellido.toLowerCase();
+      const apellidoB = b.apellido.toLowerCase();
+      if (apellidoA < apellidoB) return -1;
+      if (apellidoA > apellidoB) return 1;
+
+      const nombreA = a.nombre.toLowerCase();
+      const nombreB = b.nombre.toLowerCase();
+      return nombreA.localeCompare(nombreB);
+    })
+  }))
+}));
+
     const mostrarMensaje = req.query.guardado === '1';
 
     res.render('calificaciones', {

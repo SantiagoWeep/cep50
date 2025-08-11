@@ -55,10 +55,12 @@ exports.mostrarBoletin = async (req, res) => {
         materias[row.materia_id].nombre = row.materia;
       }
     });
-      function truncar(numero, decimales) {
-        const factor = Math.pow(10, decimales);
-        return Math.trunc(numero * factor) / factor;
-      }
+     function formatearTruncado(num, decimales) {
+  const factor = Math.pow(10, decimales);
+  const truncado = Math.trunc(num * factor) / factor;
+  return truncado.toFixed(decimales); // Esto solo agrega ceros, no redondea lo truncado
+}
+
     // Calcular promedio final por materia
     Object.values(materias).forEach(materia => {
       const trimestres = [materia.notas.T1, materia.notas.T2, materia.notas.T3]
@@ -83,7 +85,8 @@ exports.mostrarBoletin = async (req, res) => {
         }
       }
       
-      materia.promedioFinal = promedioFinal !== null ? truncar(promedioFinal, 2) : '-';
+      materia.promedioFinal = promedioFinal !== null ? formatearTruncado(promedioFinal, 2) : '-';
+
 
     });
 
