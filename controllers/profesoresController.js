@@ -9,7 +9,8 @@ exports.mostrarProfesores = async (req, res) => {
         cursos.id AS curso_id,
         cursos.nombre AS curso_nombre,
         materias.id AS materia_id,
-        materias.nombre AS materia_nombre
+        materias.nombre AS materia_nombre,
+        cpm.id AS relacion_id
       FROM profesores
       LEFT JOIN curso_profesor_materia cpm ON profesores.id = cpm.profesor_id
       LEFT JOIN cursos ON cursos.id = cpm.curso_id

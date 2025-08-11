@@ -7,8 +7,8 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME
 });
 
-// Exporta un objeto con método query que llama a pool.query
 module.exports = {
   query: (...params) => pool.query(...params),
-  execute: (...params) => pool.execute(...params)
+  execute: (...params) => pool.execute(...params),
+  getConnection: () => pool.getConnection() // ✅ Agregado
 };

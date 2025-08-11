@@ -110,32 +110,21 @@ exports.mostrarListaAlumnos = async (req, res) => {
     res.status(500).send('Error en base de datos');
   }
 };
-
-
 exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
-  const deletes = [];
+  const clavesEnviadas = new Set();
 
+  // Recolectar claves válidas y datos para insertar
   for (const key in data) {
     if (key.startsWith('nota_')) {
       const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
-      const valorRaw = data[key]; // lo que llega desde el input
+      const valorRaw = data[key];
 
-      if (valorRaw === '' || valorRaw === null || typeof valorRaw === 'undefined') {
-        // Agregamos esta nota para eliminar en la base
-        deletes.push({
-          alumnoId,
-          cursoId,
-          materiaId,
-          trimestre: parseInt(trimestreStr),
-          numero: parseInt(numeroStr)
-        });
-        continue;
-      }
+      // Ignorar campos vacíos
+      if (valorRaw === '' || valorRaw === null || typeof valorRaw === 'undefined') continue;
 
       const nota = parseFloat(valorRaw);
-
       if (
         !isNaN(nota) &&
         [1, 2, 3, 4].includes(parseInt(trimestreStr)) &&
@@ -149,19 +138,44 @@ exports.guardarNotas = async (req, res) => {
           parseInt(numeroStr),
           nota
         ]);
+
+        const clave = `${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`;
+        clavesEnviadas.add(clave);
       }
     }
   }
 
   try {
-    // Primero borramos las notas vacías
+    // Obtener todas las notas existentes para los alumnos, cursos y materias involucrados
+    const [notasExistentes] = await db.query(`
+      SELECT alumno_id, curso_id, materia_id, trimestre, numero
+      FROM notas
+    `);
+
+    // Detectar cuáles deben eliminarse
+    const deletes = [];
+    for (const nota of notasExistentes) {
+      const clave = `${nota.alumno_id}_${nota.curso_id}_${nota.materia_id}_${nota.trimestre}_${nota.numero}`;
+      if (!clavesEnviadas.has(clave)) {
+        deletes.push([
+          nota.alumno_id,
+          nota.curso_id,
+          nota.materia_id,
+          nota.trimestre,
+          nota.numero
+        ]);
+      }
+    }
+
+    // Ejecutar deletes
     for (const del of deletes) {
       await db.query(`
         DELETE FROM notas 
         WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
-      `, [del.alumnoId, del.cursoId, del.materiaId, del.trimestre, del.numero]);
+      `, del);
     }
 
+    // Insertar o actualizar las notas nuevas
     if (inserts.length > 0) {
       const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
         `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE)`
@@ -178,7 +192,7 @@ exports.guardarNotas = async (req, res) => {
       await db.query(queryNotas);
     }
 
-    // Actualizamos boletines igual que antes
+    // Actualizar boletines como antes
     const updateBoletinesQuery = `
       INSERT INTO boletines (
         alumno_id, curso_id, materia_id,
