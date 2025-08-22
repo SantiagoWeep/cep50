@@ -129,7 +129,7 @@ input[type="number"] {
     <% cursos.forEach(curso => { %>
       <h2>Curso: <%= curso.curso %></h2>
         <div style="display: flex; justify-content: flex-end; width: 100%;">
-          <button type="submit" formaction="/calificaciones/guardarNotas">Guardar</button>
+          <button type="submit" formaction="/calificaciones/guardarNotas" class="btn-guardar">Guardar</button>
         </div>
       <% curso.materias.forEach(materia => { %>
         <h3>Materia: <%= materia.materia_nombre %></h3>
@@ -225,7 +225,7 @@ input[type="number"] {
     <% }) %>
 
     <div style="text-align: center; margin-top: 20px;">
-      <button type="submit" formaction="/calificaciones/guardarNotas">Guardar</button>     
+      <button type="submit" formaction="/calificaciones/guardarNotas" class="btn-guardar">Guardar</button>     
     </div>
 
   </form>
@@ -371,8 +371,18 @@ input[type="number"] {
   window.addEventListener('beforeunload', (e) => {
     if (hayCambios) {
       e.preventDefault();
-      e.returnValue = ''; // Necesario para Chrome mostrar alerta
+      e.returnValue = ''; 
     }
+  });
+
+// bloque de form al enviar 
+
+
+   document.querySelector('form').addEventListener('submit', function () {
+    document.querySelectorAll('.btn-guardar').forEach(btn => {
+      btn.disabled = true;
+      btn.innerText = 'Guardando...'; // opcional
+    });
   });
 </script>
 
