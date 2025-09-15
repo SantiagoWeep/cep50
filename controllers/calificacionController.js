@@ -120,6 +120,7 @@ exports.mostrarListaAlumnos = async (req, res) => {
     res.status(500).send('Error en base de datos');
   }
 };
+
 exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
@@ -131,12 +132,15 @@ exports.guardarNotas = async (req, res) => {
       const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
       const valorRaw = data[key];
 
-      // Ignorar campos vacíos
-      if (valorRaw === '' || valorRaw === null || typeof valorRaw === 'undefined') continue;
+      let nota = null;
+      if (valorRaw !== '' && valorRaw !== null && typeof valorRaw !== 'undefined') {
+        const parsed = parseFloat(valorRaw);
+        if (!isNaN(parsed)) {
+          nota = parsed;
+        }
+      }
 
-      const nota = parseFloat(valorRaw);
       if (
-        !isNaN(nota) &&
         [1, 2, 3, 4].includes(parseInt(trimestreStr)) &&
         [1, 2, 3, 4].includes(parseInt(numeroStr))
       ) {
@@ -156,11 +160,16 @@ exports.guardarNotas = async (req, res) => {
   }
 
   try {
-    // Obtener todas las notas existentes para los alumnos, cursos y materias involucrados
+    // Buscar notas existentes
     const [notasExistentes] = await db.query(`
       SELECT alumno_id, curso_id, materia_id, trimestre, numero
       FROM notas
-    `);
+      WHERE alumno_id IN (?) AND curso_id IN (?) AND materia_id IN (?)
+    `, [
+      [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))], // alumnos
+      [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[1]))], // cursos
+      [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[2]))]  // materias
+    ]);
 
     // Detectar cuáles deben eliminarse
     const deletes = [];
@@ -185,10 +194,10 @@ exports.guardarNotas = async (req, res) => {
       `, del);
     }
 
-    // Insertar o actualizar las notas nuevas
+    // Ejecutar inserts / updates
     if (inserts.length > 0) {
       const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
-        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE)`
+        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota === null ? 'NULL' : nota}, TRUE)`
       ).join(',');
 
       const queryNotas = `
@@ -202,7 +211,7 @@ exports.guardarNotas = async (req, res) => {
       await db.query(queryNotas);
     }
 
-    // Actualizar boletines como antes
+    // Actualizar boletines
     const updateBoletinesQuery = `
       INSERT INTO boletines (
         alumno_id, curso_id, materia_id,
@@ -244,7 +253,6 @@ exports.guardarNotas = async (req, res) => {
     await db.query(updateBoletinesQuery);
 
     res.redirect('/calificaciones?guardado=1');
-
   } catch (err) {
     console.error('Error al guardar o actualizar boletines:', err);
     res.status(500).send('Error al guardar notas o boletines');
