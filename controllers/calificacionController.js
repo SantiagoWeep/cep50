@@ -122,9 +122,10 @@ exports.mostrarListaAlumnos = async (req, res) => {
 };
 
 
-
-
 exports.guardarNotas = async (req, res) => {
+  if (!req.profesor) return res.status(401).send('No autorizado');
+  const profesorId = parseInt(req.profesor.id, 10);
+
   const data = req.body;
   const inserts = [];
   const clavesEnviadas = new Set();
@@ -138,78 +139,34 @@ exports.guardarNotas = async (req, res) => {
       let nota = null;
       if (valorRaw !== '' && valorRaw !== null && typeof valorRaw !== 'undefined') {
         const parsed = parseFloat(valorRaw);
-        if (!isNaN(parsed)) {
-          nota = parsed;
-        }
+        if (!isNaN(parsed)) nota = parsed;
       }
 
-      if (
-        [1, 2, 3, 4].includes(parseInt(trimestreStr)) &&
-        [1, 2, 3, 4].includes(parseInt(numeroStr))
-      ) {
-        inserts.push([
-          alumnoId,
-          cursoId,
-          materiaId,
-          parseInt(trimestreStr),
-          parseInt(numeroStr),
-          nota
-        ]);
-
-        const clave = `${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`;
-        clavesEnviadas.add(clave);
+      if ([1, 2, 3, 4].includes(+trimestreStr) && [1, 2, 3, 4].includes(+numeroStr)) {
+        inserts.push([alumnoId, cursoId, materiaId, +trimestreStr, +numeroStr, nota]);
+        clavesEnviadas.add(`${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`);
       }
     }
   }
 
   try {
-    
-const alumnosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))];
-const cursosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[1]))];
-const materiasIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[2]))];
+    const alumnosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))];
+    const cursosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[1]))];
+    const materiasIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[2]))];
 
+    // Filtrar solo las notas no nulas para insertar
+    const insertsFiltradas = inserts.filter(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) => nota !== null);
 
-const [notasExistentes] = await db.query(`
-  SELECT alumno_id, curso_id, materia_id, trimestre, numero
-  FROM notas
-  WHERE alumno_id IN (?) 
-    AND curso_id IN (?) 
-    AND materia_id IN (?)
-`, [alumnosIds, cursosIds, materiasIds]);
-
-/*
-    // Detectar cuáles deben eliminarse
-    const deletes = [];
-    for (const nota of notasExistentes) {
-      const clave = `${nota.alumno_id}_${nota.curso_id}_${nota.materia_id}_${nota.trimestre}_${nota.numero}`;
-      if (!clavesEnviadas.has(clave)) {
-        deletes.push([
-          nota.alumno_id,
-          nota.curso_id,
-          nota.materia_id,
-          nota.trimestre,
-          nota.numero
-        ]);
-      }
-    }
-
-    // Ejecutar deletes
-    for (const del of deletes) {
-      await db.query(`
-        DELETE FROM notas 
-        WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
-      `, del);
-    }*/
-
-    // Ejecutar inserts / updates
-    if (inserts.length > 0) {
-      const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
-        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota === null ? 'NULL' : nota}, TRUE)`
-      ).join(',');
+    if (insertsFiltradas.length > 0) {
+      const values = insertsFiltradas
+        .map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
+          `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE, ${profesorId})`
+        )
+        .join(',');
 
       const queryNotas = `
         INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado, profesor_id)
-        VALUES  ${values}
+        VALUES ${values}
         ON DUPLICATE KEY UPDATE 
           nota = VALUES(nota), 
           guardado = TRUE;
@@ -219,48 +176,45 @@ const [notasExistentes] = await db.query(`
     }
 
     const updateBoletinesQuery = `
-INSERT INTO boletines (
-    alumno_id, curso_id, materia_id,
-    trimestre_1, trimestre_2, trimestre_3,
-    examen_dic, examen_mar, promedio_final
-)
-SELECT 
-    n.alumno_id,
-    n.curso_id,
-    n.materia_id,
-    TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
-    TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
-    TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
-    MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
-    MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
-    TRUNCATE(
-        CASE
-            WHEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END) >= 6 THEN 
-                AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
-            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
-                MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
-            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
-                MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
-            ELSE AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
-        END, 2
-    )
-FROM notas n
-JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
-WHERE n.materia_id IN (?) AND n.curso_id IN (?) AND n.profesor_id = ?  -- <- filtramos por profesor
-GROUP BY n.alumno_id, n.curso_id, n.materia_id
-ON DUPLICATE KEY UPDATE 
-    trimestre_1 = VALUES(trimestre_1),
-    trimestre_2 = VALUES(trimestre_2),
-    trimestre_3 = VALUES(trimestre_3),
-    examen_dic = VALUES(examen_dic),
-    examen_mar = VALUES(examen_mar),
-    promedio_final = VALUES(promedio_final);
-`;
+      INSERT INTO boletines (
+          alumno_id, curso_id, materia_id,
+          trimestre_1, trimestre_2, trimestre_3,
+          examen_dic, examen_mar, promedio_final
+      )
+      SELECT 
+          n.alumno_id,
+          n.curso_id,
+          n.materia_id,
+          TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
+          TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
+          TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
+          MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
+          MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
+          TRUNCATE(
+              CASE
+                  WHEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END) >= 6 THEN 
+                      AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
+                  WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
+                      MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
+                  WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
+                      MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
+                  ELSE AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
+              END, 2
+          )
+      FROM notas n
+      JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
+      WHERE n.materia_id IN (?) AND n.curso_id IN (?) AND n.profesor_id = ?
+      GROUP BY n.alumno_id, n.curso_id, n.materia_id
+      ON DUPLICATE KEY UPDATE 
+          trimestre_1 = VALUES(trimestre_1),
+          trimestre_2 = VALUES(trimestre_2),
+          trimestre_3 = VALUES(trimestre_3),
+          examen_dic = VALUES(examen_dic),
+          examen_mar = VALUES(examen_mar),
+          promedio_final = VALUES(promedio_final);
+    `;
 
-await db.query(updateBoletinesQuery, [materiasIds, cursosIds, profesorId]);
-
-
-
+    await db.query(updateBoletinesQuery, [materiasIds, cursosIds, profesorId]);
 
     res.redirect('/calificaciones?guardado=1');
   } catch (err) {
