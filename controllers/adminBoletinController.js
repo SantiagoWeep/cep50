@@ -4,35 +4,25 @@ const db = require('../config/db');
 function truncar2Decimales(valor) {
   return Math.trunc(valor * 100) / 100;
 }
+function calcularPromedioFinalBoletin(b) {
+  const notas = [
+    b.trimestre_1 !== null ? parseFloat(b.trimestre_1) : null,
+    b.trimestre_2 !== null ? parseFloat(b.trimestre_2) : null,
+    b.trimestre_3 !== null ? parseFloat(b.trimestre_3) : null,
+  ].filter(n => n !== null);
 
-function calcularPromedioFinal(alumno) {
-  if (!alumno.notas || alumno.notas.length === 0) return null;
-
-  const promediosTrimestrales = alumno.notas.map(tri => {
-    const notasValidas = Object.values(tri.calificaciones)
-      .map(n => parseFloat(n))
-      .filter(n => !isNaN(n));
-    if (notasValidas.length === 0) return null;
-    const suma = notasValidas.reduce((a, b) => a + b, 0);
-    return truncar2Decimales(suma / notasValidas.length);
-  }).filter(x => x !== null);
-
-  let promedioFinal = null;
-  if (promediosTrimestrales.length) {
-    const sumaProm = promediosTrimestrales.reduce((a, b) => a + b, 0);
-    promedioFinal = truncar2Decimales(sumaProm / promediosTrimestrales.length);
+  let promedio = null;
+  if (notas.length) {
+    promedio = truncar2Decimales(notas.reduce((a,b)=>a+b,0)/notas.length);
   }
 
-  const exDic = alumno.examen_dic !== null ? parseFloat(alumno.examen_dic) : null;
-  const exMar = alumno.examen_mar !== null ? parseFloat(alumno.examen_mar) : null;
+  const exDic = b.examen_dic !== null ? parseFloat(b.examen_dic) : null;
+  const exMar = b.examen_mar !== null ? parseFloat(b.examen_mar) : null;
 
-  if ((promedioFinal === null || promedioFinal < 6) && exDic !== null && exDic >= 6) {
-    promedioFinal = exDic;
-  } else if ((promedioFinal === null || promedioFinal < 6) && exMar !== null && exMar >= 6) {
-    promedioFinal = exMar;
-  }
+  if ((promedio === null || promedio < 6) && exDic !== null && exDic >= 6) promedio = exDic;
+  else if ((promedio === null || promedio < 6) && exMar !== null && exMar >= 6) promedio = exMar;
 
-  return promedioFinal;
+  return promedio;
 }
 
 
@@ -69,11 +59,11 @@ exports.mostrarBoletines = async (req, res) => {
 
     const [boletines] = await db.query(query, params);
 
-    // Calcular promedio final dinámicamente
     const boletinesConPromedio = boletines.map(b => ({
       ...b,
-      promedio_final: calcularPromedioFinal(b)
+      promedio_final: calcularPromedioFinalBoletin(b)
     }));
+
 
     if (req.xhr) {
       return res.render('parciales/boletinesList', { boletines: boletinesConPromedio, layout: false });
