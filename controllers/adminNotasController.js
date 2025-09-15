@@ -113,21 +113,23 @@ exports.mostrarNotas = async (req, res) => {
             )
             .flat();
 
-          const avg = trimestrales.length ? trimestrales.reduce((a,b)=>a+b,0)/trimestrales.length : null;
+          let avg = null;
+          if (trimestrales.length) {
+            avg = trimestrales.reduce((a,b)=>a+b,0)/trimestrales.length;
+            avg = Math.trunc(avg*100)/100; // truncado a 2 decimales
+          }
 
           const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
           const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
 
-          let final = null;
-          if (avg !== null && !isNaN(avg) && avg >= 6) final = avg;
-          else if (exDic !== null && exDic >= 6) final = exDic;
-          else if (exMar !== null && exMar >= 6) final = exMar;
-          else if (avg !== null) final = avg;
+          let final = avg; // por defecto promedio trimestral
 
-          return {
-            ...al,
-            promedio_final: final !== null ? Math.trunc(final*100)/100 : null
-          };
+          // Solo usar examen si avg <6 o no hay notas
+          if ((avg === null || avg < 6) && exDic !== null && exDic >= 6) final = exDic;
+          else if ((avg === null || avg < 6) && exMar !== null && exMar >= 6) final = exMar;
+
+          al.promedio_final = final !== null ? Math.trunc(final*100)/100 : null;
+
         })
       }))
     }));

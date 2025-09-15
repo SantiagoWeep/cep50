@@ -1,28 +1,30 @@
 
 const db = require('../config/db');
-const db = require('../config/db');
 
-// Función para calcular el promedio final
+
 function calcularPromedioFinal(b) {
   // Notas trimestrales válidas
   const notasValidas = [b.trimestre_1, b.trimestre_2, b.trimestre_3].filter(n => n !== null);
 
-  // Promedio de los tres trimestres
+  // Promedio de los tres trimestres (truncado a 2 decimales)
   let promedio = null;
   if (notasValidas.length) {
-    promedio = Math.trunc((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 100) / 100;
+    promedio = Math.trunc((notasValidas.reduce((a, c) => a + c, 0) / notasValidas.length) * 100) / 100;
   }
 
-  // Considerar exámenes (dic/mar) si están >=6
   const exDic = b.examen_dic !== null ? parseFloat(b.examen_dic) : null;
   const exMar = b.examen_mar !== null ? parseFloat(b.examen_mar) : null;
 
-  if ((exDic !== null && exDic >= 6) || (exMar !== null && exMar >= 6)) {
-    promedio = (exDic !== null && exDic >= 6) ? exDic : exMar;
+  // Solo usar examen si promedio trimestral <6 o no hay notas
+  if ((promedio === null || promedio < 6) && (exDic !== null && exDic >= 6)) {
+    promedio = exDic;
+  } else if ((promedio === null || promedio < 6) && (exMar !== null && exMar >= 6)) {
+    promedio = exMar;
   }
 
   return promedio;
 }
+
 
 exports.mostrarBoletines = async (req, res) => {
   const offset = parseInt(req.query.offset || 0);
