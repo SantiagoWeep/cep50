@@ -130,24 +130,34 @@ exports.guardarNotas = async (req, res) => {
   const inserts = [];
   const clavesEnviadas = new Set();
 
-  // Recolectar claves válidas y datos para insertar
   for (const key in data) {
-    if (key.startsWith('nota_')) {
-      const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
-      const valorRaw = data[key];
+  if (key.startsWith('nota_')) {
+    const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
+    const valorRaw = data[key];
 
-      let nota = null;
-      if (valorRaw !== '' && valorRaw !== null && typeof valorRaw !== 'undefined') {
-        const parsed = parseFloat(valorRaw);
-        if (!isNaN(parsed)) nota = parsed;
-      }
+    let nota = null;
+    if (valorRaw !== '' && valorRaw !== null && typeof valorRaw !== 'undefined') {
+      const parsed = parseFloat(valorRaw);
+      if (!isNaN(parsed)) nota = parsed;
+    }
 
-      if ([1, 2, 3, 4].includes(+trimestreStr) && [1, 2, 3, 4].includes(+numeroStr)) {
+    if ([1,2,3,4].includes(+trimestreStr) && [1,2,3,4].includes(+numeroStr)) {
+      clavesEnviadas.add(`${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`);
+      
+      if (nota !== null) {
         inserts.push([alumnoId, cursoId, materiaId, +trimestreStr, +numeroStr, nota]);
-        clavesEnviadas.add(`${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`);
+      } else {
+        // Nota borrada: poner NULL en la DB
+        await db.query(`
+          UPDATE notas 
+          SET nota = NULL, guardado = TRUE 
+          WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
+        `, [alumnoId, cursoId, materiaId, +trimestreStr, +numeroStr]);
       }
     }
   }
+}
+
 
   try {
     const alumnosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))];
