@@ -120,6 +120,10 @@ exports.mostrarListaAlumnos = async (req, res) => {
     res.status(500).send('Error en base de datos');
   }
 };
+
+
+
+
 exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
@@ -216,12 +220,12 @@ const [notasExistentes] = await db.query(`
 
     // Actualizar boletines
     const updateBoletinesQuery = `
-      INSERT INTO boletines (
+          INSERT INTO boletines (
         alumno_id, curso_id, materia_id,
         trimestre_1, trimestre_2, trimestre_3,
         examen_dic, examen_mar, promedio_final
-      )
-      SELECT 
+    )
+    SELECT 
         n.alumno_id,
         n.curso_id,
         n.materia_id,
@@ -232,28 +236,32 @@ const [notasExistentes] = await db.query(`
         MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
         TRUNCATE(
           CASE
-            WHEN AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END) >= 6 THEN 
-              AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+            WHEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END) >= 6 THEN 
+              AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
             WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
               MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
             WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
               MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
-            ELSE AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+            ELSE AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
           END
-        , 2)
-      FROM notas n
-      JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
-      GROUP BY n.alumno_id, n.curso_id, n.materia_id
-      ON DUPLICATE KEY UPDATE 
+        ,2)
+    FROM notas n
+    JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
+    WHERE n.materia_id IN (?) AND n.curso_id IN (?)  -- <- filtra por materias y cursos
+    GROUP BY n.alumno_id, n.curso_id, n.materia_id
+    ON DUPLICATE KEY UPDATE 
         trimestre_1 = VALUES(trimestre_1),
         trimestre_2 = VALUES(trimestre_2),
         trimestre_3 = VALUES(trimestre_3),
         examen_dic = VALUES(examen_dic),
         examen_mar = VALUES(examen_mar),
         promedio_final = VALUES(promedio_final);
+
     `;
 
-    await db.query(updateBoletinesQuery);
+    await db.query(updateBoletinesQuery, [materiasIds, cursosIds]);
+
+
 
     res.redirect('/calificaciones?guardado=1');
   } catch (err) {
