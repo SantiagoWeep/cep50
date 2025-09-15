@@ -125,47 +125,46 @@ exports.mostrarNotas = async (req, res) => {
         if (row.numero === 2) alumno.examen_mar = row.nota !== null ? Number(row.nota) : null;
       }
     });
+const cursosArray = Object.values(cursos).map(c => ({
+  curso_id: c.curso_id,
+  curso: c.curso,
+  materias: Object.values(c.materias).map(m => ({
+    materia_id: m.materia_id,
+    materia_nombre: m.materia_nombre,
+    profesor_nombre: m.profesor_nombre,
+    profesor_apellido: m.profesor_apellido,
+    alumnos: Array.from(m.alumnos.values()).map(al => {
+      // Promedio por trimestre (truncado)
+      const promediosTrimestrales = al.notas.map(n => {
+        const notasValidas = Object.values(n.calificaciones)
+          .map(x => parseFloat(x))
+          .filter(x => !isNaN(x));
+        if (notasValidas.length === 0) return null;
+        const suma = notasValidas.reduce((a,b)=>a+b,0);
+        return Math.trunc((suma / notasValidas.length) * 100) / 100;
+      }).filter(x => x !== null);
 
-    // Convertir Map a Array y calcular promedio final correctamente
-    const cursosArray = Object.values(cursos).map(c => ({
-      curso_id: c.curso_id,
-      curso: c.curso,
-      materias: Object.values(c.materias).map(m => ({
-        materia_id: m.materia_id,
-        materia_nombre: m.materia_nombre,
-        profesor_nombre: m.profesor_nombre,
-        profesor_apellido: m.profesor_apellido,
-        alumnos: Array.from(m.alumnos.values()).map(al => {
-          // Promedio por trimestre (truncado)
-          const promediosTrimestrales = al.notas.map(n => {
-            const notasValidas = Object.values(n.calificaciones)
-              .map(x => parseFloat(x))
-              .filter(x => !isNaN(x));
-            if (notasValidas.length === 0) return null;
-            const suma = notasValidas.reduce((a,b)=>a+b,0);
-            return Math.trunc((suma / notasValidas.length) * 100) / 100;
-          }).filter(x => x !== null);
+      // Promedio final
+      let final = null;
+      if (promediosTrimestrales.length) {
+        const sumaProm = promediosTrimestrales.reduce((a,b)=>a+b,0);
+        final = Math.trunc((sumaProm / promediosTrimestrales.length) * 100) / 100;
+      }
 
-          // Promedio final
-          let final = null;
-          if (promediosTrimestrales.length) {
-            const sumaProm = promediosTrimestrales.reduce((a,b)=>a+b,0);
-            final = Math.trunc((sumaProm / promediosTrimestrales.length) * 100) / 100;
-          }
+      // Exámenes
+      const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
+      const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
 
-          // Exámenes
-          const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
-          const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
+      if ((final === null || final < 6) && exDic !== null && exDic >= 6) final = exDic;
+      else if ((final === null || final < 6) && exMar !== null && exMar >= 6) final = exMar;
 
-          if ((final === null || final < 6) && exDic !== null && exDic >= 6) final = exDic;
-          else if ((final === null || final < 6) && exMar !== null && exMar >= 6) final = exMar;
+      // Guardar promedio final en el alumno
+      al.promedio_final = calcularPromedioFinal(al);
 
-          al.promedio_final = calcularPromedioFinal(al);
-
-
-        })
-      }))
-    }));
+      return al; // <--- Muy importante retornar el objeto
+    })
+  }))
+}));
 
     res.render('admin/notas', {
       tipoBusqueda: 'materia o nombre',
