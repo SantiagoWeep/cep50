@@ -1,5 +1,7 @@
 const db = require('../config/db');
 
+const db = require('../config/db');
+
 // mostrarNotas
 exports.mostrarNotas = async (req, res) => {
   const cursoFiltro = req.query.curso || '';
@@ -74,6 +76,7 @@ exports.mostrarNotas = async (req, res) => {
           })),
           examen_dic: null,
           examen_mar: null,
+          promedio_final: null
         });
       }
 
@@ -92,6 +95,7 @@ exports.mostrarNotas = async (req, res) => {
       }
     });
 
+    // Convertir Map a Array y calcular promedio final
     const cursosArray = Object.values(cursos).map(c => ({
       curso_id: c.curso_id,
       curso: c.curso,
@@ -100,7 +104,31 @@ exports.mostrarNotas = async (req, res) => {
         materia_nombre: m.materia_nombre,
         profesor_nombre: m.profesor_nombre,
         profesor_apellido: m.profesor_apellido,
-        alumnos: Array.from(m.alumnos.values())
+        alumnos: Array.from(m.alumnos.values()).map(al => {
+          // Promedio trimestral
+          const trimestrales = al.notas
+            .map(n => Object.values(n.calificaciones)
+              .map(x => parseFloat(x))
+              .filter(x => !isNaN(x))
+            )
+            .flat();
+
+          const avg = trimestrales.length ? trimestrales.reduce((a,b)=>a+b,0)/trimestrales.length : null;
+
+          const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
+          const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
+
+          let final = null;
+          if (avg !== null && !isNaN(avg) && avg >= 6) final = avg;
+          else if (exDic !== null && exDic >= 6) final = exDic;
+          else if (exMar !== null && exMar >= 6) final = exMar;
+          else if (avg !== null) final = avg;
+
+          return {
+            ...al,
+            promedio_final: final !== null ? Math.trunc(final*100)/100 : null
+          };
+        })
       }))
     }));
 
@@ -113,7 +141,7 @@ exports.mostrarNotas = async (req, res) => {
       cursoSeleccionado: cursoFiltro,
       cursos: cursosArray,
       search: req.query.q || '',
-      offset: 0,
+      offset: 0
     });
 
   } catch (err) {
@@ -121,6 +149,7 @@ exports.mostrarNotas = async (req, res) => {
     res.status(500).send('Error de base de datos');
   }
 };
+
 
 exports.buscarNotas = async (req, res) => {
   const q = req.query.q || '';

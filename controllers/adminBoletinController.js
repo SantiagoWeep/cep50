@@ -1,10 +1,33 @@
 
 const db = require('../config/db');
+const db = require('../config/db');
+
+// Función para calcular el promedio final
+function calcularPromedioFinal(b) {
+  // Notas trimestrales válidas
+  const notasValidas = [b.trimestre_1, b.trimestre_2, b.trimestre_3].filter(n => n !== null);
+
+  // Promedio de los tres trimestres
+  let promedio = null;
+  if (notasValidas.length) {
+    promedio = Math.trunc((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 100) / 100;
+  }
+
+  // Considerar exámenes (dic/mar) si están >=6
+  const exDic = b.examen_dic !== null ? parseFloat(b.examen_dic) : null;
+  const exMar = b.examen_mar !== null ? parseFloat(b.examen_mar) : null;
+
+  if ((exDic !== null && exDic >= 6) || (exMar !== null && exMar >= 6)) {
+    promedio = (exDic !== null && exDic >= 6) ? exDic : exMar;
+  }
+
+  return promedio;
+}
 
 exports.mostrarBoletines = async (req, res) => {
   const offset = parseInt(req.query.offset || 0);
   const limit = 30;
-  const curso = req.query.curso || ''; // ← obtener filtro por curso si viene
+  const curso = req.query.curso || '';
 
   try {
     let query = `
@@ -33,8 +56,14 @@ exports.mostrarBoletines = async (req, res) => {
 
     const [boletines] = await db.query(query, params);
 
+    // Calcular promedio final dinámicamente
+    const boletinesConPromedio = boletines.map(b => ({
+      ...b,
+      promedio_final: calcularPromedioFinal(b)
+    }));
+
     if (req.xhr) {
-      return res.render('parciales/boletinesList', { boletines, layout: false });
+      return res.render('parciales/boletinesList', { boletines: boletinesConPromedio, layout: false });
     }
 
     res.render('admin/boletines', {
@@ -43,7 +72,7 @@ exports.mostrarBoletines = async (req, res) => {
       textoBotonAgregar: '',
       idModalAgregar: '',
       mostrarFiltroCurso: true,
-      boletines,
+      boletines: boletinesConPromedio,
       offset,
       search: req.query.q || '',
       cursoSeleccionado: curso
@@ -54,7 +83,6 @@ exports.mostrarBoletines = async (req, res) => {
     res.status(500).send('Error al cargar boletines');
   }
 };
-
 
 
 
