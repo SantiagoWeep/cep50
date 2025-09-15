@@ -208,8 +208,8 @@ const [notasExistentes] = await db.query(`
       ).join(',');
 
       const queryNotas = `
-        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado)
-        VALUES ${values}
+        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado, profesor_id)
+        VALUES  ${values}
         ON DUPLICATE KEY UPDATE 
           nota = VALUES(nota), 
           guardado = TRUE;
@@ -218,48 +218,47 @@ const [notasExistentes] = await db.query(`
       await db.query(queryNotas);
     }
 
-    // Actualizar boletines
     const updateBoletinesQuery = `
-          INSERT INTO boletines (
-        alumno_id, curso_id, materia_id,
-        trimestre_1, trimestre_2, trimestre_3,
-        examen_dic, examen_mar, promedio_final
-    )
-    SELECT 
-        n.alumno_id,
-        n.curso_id,
-        n.materia_id,
-        TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
-        TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
-        TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
-        MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
-        MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
-        TRUNCATE(
-          CASE
+INSERT INTO boletines (
+    alumno_id, curso_id, materia_id,
+    trimestre_1, trimestre_2, trimestre_3,
+    examen_dic, examen_mar, promedio_final
+)
+SELECT 
+    n.alumno_id,
+    n.curso_id,
+    n.materia_id,
+    TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
+    TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
+    TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
+    MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
+    MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
+    TRUNCATE(
+        CASE
             WHEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END) >= 6 THEN 
-              AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
+                AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
             WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
-              MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
+                MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
             WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
-              MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
+                MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
             ELSE AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
-          END
-        ,2)
-    FROM notas n
-    JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
-    WHERE n.materia_id IN (?) AND n.curso_id IN (?)  -- <- filtra por materias y cursos
-    GROUP BY n.alumno_id, n.curso_id, n.materia_id
-    ON DUPLICATE KEY UPDATE 
-        trimestre_1 = VALUES(trimestre_1),
-        trimestre_2 = VALUES(trimestre_2),
-        trimestre_3 = VALUES(trimestre_3),
-        examen_dic = VALUES(examen_dic),
-        examen_mar = VALUES(examen_mar),
-        promedio_final = VALUES(promedio_final);
+        END, 2
+    )
+FROM notas n
+JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
+WHERE n.materia_id IN (?) AND n.curso_id IN (?) AND n.profesor_id = ?  -- <- filtramos por profesor
+GROUP BY n.alumno_id, n.curso_id, n.materia_id
+ON DUPLICATE KEY UPDATE 
+    trimestre_1 = VALUES(trimestre_1),
+    trimestre_2 = VALUES(trimestre_2),
+    trimestre_3 = VALUES(trimestre_3),
+    examen_dic = VALUES(examen_dic),
+    examen_mar = VALUES(examen_mar),
+    promedio_final = VALUES(promedio_final);
+`;
 
-    `;
+await db.query(updateBoletinesQuery, [materiasIds, cursosIds, profesorId]);
 
-    await db.query(updateBoletinesQuery, [materiasIds, cursosIds]);
 
 
 
