@@ -127,7 +127,8 @@ exports.mostrarNotas = async (req, res) => {
           if ((final === null || final < 6) && exDic !== null && exDic >= 6) final = exDic;
           else if ((final === null || final < 6) && exMar !== null && exMar >= 6) final = exMar;
 
-          al.promedio_final = final;
+          al.promedio_final = calcularPromedioFinal(al);
+
 
         })
       }))

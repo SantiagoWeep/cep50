@@ -4,28 +4,35 @@ const db = require('../config/db');
 function truncar2Decimales(valor) {
   return Math.floor(valor * 100) / 100;
 }
+function calcularPromedioFinal(alumno) {
+  // Promedio por trimestre
+  const promediosTrimestrales = alumno.notas.map(tri => {
+    const notasValidas = Object.values(tri.calificaciones)
+      .map(n => parseFloat(n))
+      .filter(n => !isNaN(n));
+    if (notasValidas.length === 0) return null;
+    const suma = notasValidas.reduce((a,b)=>a+b,0);
+    return Math.trunc((suma / notasValidas.length) * 100) / 100;
+  }).filter(x => x !== null);
 
-function calcularPromedioFinal(b) {
-  // Notas trimestrales válidas
-  const notasValidas = [b.trimestre_1, b.trimestre_2, b.trimestre_3].filter(n => n !== null);
-
-  let promedio = null;
-  if (notasValidas.length > 0) {
-    const suma = notasValidas.reduce((a, c) => a + c, 0);
-    promedio = truncar2Decimales(suma / notasValidas.length);
+  // Promedio final
+  let promedioFinal = null;
+  if (promediosTrimestrales.length) {
+    const sumaProm = promediosTrimestrales.reduce((a,b)=>a+b,0);
+    promedioFinal = Math.trunc((sumaProm / promediosTrimestrales.length) * 100) / 100;
   }
 
-  const exDic = b.examen_dic !== null ? parseFloat(b.examen_dic) : null;
-  const exMar = b.examen_mar !== null ? parseFloat(b.examen_mar) : null;
+  // Exámenes solo si promedioFinal <6 o no hay notas
+  const exDic = alumno.examen_dic !== null ? parseFloat(alumno.examen_dic) : null;
+  const exMar = alumno.examen_mar !== null ? parseFloat(alumno.examen_mar) : null;
 
-  // Solo usar examen si promedio trimestral <6 o no hay notas
-  if ((promedio === null || promedio < 6) && (exDic !== null && exDic >= 6)) {
-    promedio = exDic;
-  } else if ((promedio === null || promedio < 6) && (exMar !== null && exMar >= 6)) {
-    promedio = exMar;
+  if ((promedioFinal === null || promedioFinal < 6) && exDic !== null && exDic >= 6) {
+    promedioFinal = exDic;
+  } else if ((promedioFinal === null || promedioFinal < 6) && exMar !== null && exMar >= 6) {
+    promedioFinal = exMar;
   }
 
-  return promedio;
+  return promedioFinal;
 }
 
 
