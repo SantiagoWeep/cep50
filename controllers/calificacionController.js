@@ -120,7 +120,6 @@ exports.mostrarListaAlumnos = async (req, res) => {
     res.status(500).send('Error en base de datos');
   }
 };
-
 exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
@@ -160,17 +159,21 @@ exports.guardarNotas = async (req, res) => {
   }
 
   try {
-    // Buscar notas existentes
-    const [notasExistentes] = await db.query(`
-      SELECT alumno_id, curso_id, materia_id, trimestre, numero
-      FROM notas
-      WHERE alumno_id IN (?) AND curso_id IN (?) AND materia_id IN (?)
-    `, [
-      [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))], // alumnos
-      [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[1]))], // cursos
-      [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[2]))]  // materias
-    ]);
+    
+const alumnosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))];
+const cursosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[1]))];
+const materiasIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[2]))];
 
+
+const [notasExistentes] = await db.query(`
+  SELECT alumno_id, curso_id, materia_id, trimestre, numero
+  FROM notas
+  WHERE alumno_id IN (?) 
+    AND curso_id IN (?) 
+    AND materia_id IN (?)
+`, [alumnosIds, cursosIds, materiasIds]);
+
+/*
     // Detectar cuáles deben eliminarse
     const deletes = [];
     for (const nota of notasExistentes) {
@@ -192,7 +195,7 @@ exports.guardarNotas = async (req, res) => {
         DELETE FROM notas 
         WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
       `, del);
-    }
+    }*/
 
     // Ejecutar inserts / updates
     if (inserts.length > 0) {
