@@ -1,6 +1,39 @@
 const db = require('../config/db');
 
-// mostrarNotas
+function truncar2Decimales(valor) {
+  return Math.trunc(valor * 100) / 100;
+}
+
+function calcularPromedioFinal(alumno) {
+  if (!alumno.notas || alumno.notas.length === 0) return null;
+
+  const promediosTrimestrales = alumno.notas.map(tri => {
+    const notasValidas = Object.values(tri.calificaciones)
+      .map(n => parseFloat(n))
+      .filter(n => !isNaN(n));
+    if (notasValidas.length === 0) return null;
+    const suma = notasValidas.reduce((a,b) => a + b, 0);
+    return truncar2Decimales(suma / notasValidas.length);
+  }).filter(x => x !== null);
+
+  let promedioFinal = null;
+  if (promediosTrimestrales.length) {
+    const sumaProm = promediosTrimestrales.reduce((a,b) => a + b, 0);
+    promedioFinal = truncar2Decimales(sumaProm / promediosTrimestrales.length);
+  }
+
+  const exDic = alumno.examen_dic !== null ? parseFloat(alumno.examen_dic) : null;
+  const exMar = alumno.examen_mar !== null ? parseFloat(alumno.examen_mar) : null;
+
+  if ((promedioFinal === null || promedioFinal < 6) && exDic !== null && exDic >= 6) {
+    promedioFinal = exDic;
+  } else if ((promedioFinal === null || promedioFinal < 6) && exMar !== null && exMar >= 6) {
+    promedioFinal = exMar;
+  }
+
+  return promedioFinal;
+}
+
 exports.mostrarNotas = async (req, res) => {
   const cursoFiltro = req.query.curso || '';
   const cursosValidos = ["Primero", "Segundo", "Tercero", "Cuarto", "Quinto"];
@@ -127,10 +160,11 @@ exports.mostrarNotas = async (req, res) => {
           if ((final === null || final < 6) && exDic !== null && exDic >= 6) final = exDic;
           else if ((final === null || final < 6) && exMar !== null && exMar >= 6) final = exMar;
 
-          al.promedio_final = calcularPromedioFinal(al);
+          al.promedio_final = final;
 
-
+          return al;  // ✅ DEVOLVEMOS el alumno modificado
         })
+
       }))
     }));
 

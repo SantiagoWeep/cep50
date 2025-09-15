@@ -2,27 +2,27 @@
 const db = require('../config/db');
 
 function truncar2Decimales(valor) {
-  return Math.floor(valor * 100) / 100;
+  return Math.trunc(valor * 100) / 100;
 }
+
 function calcularPromedioFinal(alumno) {
-  // Promedio por trimestre
+  if (!alumno.notas || alumno.notas.length === 0) return null;
+
   const promediosTrimestrales = alumno.notas.map(tri => {
     const notasValidas = Object.values(tri.calificaciones)
       .map(n => parseFloat(n))
       .filter(n => !isNaN(n));
     if (notasValidas.length === 0) return null;
-    const suma = notasValidas.reduce((a,b)=>a+b,0);
-    return Math.trunc((suma / notasValidas.length) * 100) / 100;
+    const suma = notasValidas.reduce((a, b) => a + b, 0);
+    return truncar2Decimales(suma / notasValidas.length);
   }).filter(x => x !== null);
 
-  // Promedio final
   let promedioFinal = null;
   if (promediosTrimestrales.length) {
-    const sumaProm = promediosTrimestrales.reduce((a,b)=>a+b,0);
-    promedioFinal = Math.trunc((sumaProm / promediosTrimestrales.length) * 100) / 100;
+    const sumaProm = promediosTrimestrales.reduce((a, b) => a + b, 0);
+    promedioFinal = truncar2Decimales(sumaProm / promediosTrimestrales.length);
   }
 
-  // Exámenes solo si promedioFinal <6 o no hay notas
   const exDic = alumno.examen_dic !== null ? parseFloat(alumno.examen_dic) : null;
   const exMar = alumno.examen_mar !== null ? parseFloat(alumno.examen_mar) : null;
 
@@ -34,6 +34,7 @@ function calcularPromedioFinal(alumno) {
 
   return promedioFinal;
 }
+
 
 
 exports.mostrarBoletines = async (req, res) => {

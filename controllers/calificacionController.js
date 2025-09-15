@@ -157,6 +157,7 @@ exports.guardarNotas = async (req, res) => {
     // Filtrar solo las notas no nulas para insertar
     const insertsFiltradas = inserts.filter(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) => nota !== null);
 
+
     if (insertsFiltradas.length > 0) {
       const values = insertsFiltradas
         .map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
