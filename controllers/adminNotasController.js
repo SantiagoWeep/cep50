@@ -1,7 +1,5 @@
 const db = require('../config/db');
 
-const db = require('../config/db');
-
 // mostrarNotas
 exports.mostrarNotas = async (req, res) => {
   const cursoFiltro = req.query.curso || '';
@@ -95,7 +93,7 @@ exports.mostrarNotas = async (req, res) => {
       }
     });
 
-    // Convertir Map a Array y calcular promedio final
+    // Convertir Map a Array y calcular promedio final correctamente
     const cursosArray = Object.values(cursos).map(c => ({
       curso_id: c.curso_id,
       curso: c.curso,
@@ -105,30 +103,31 @@ exports.mostrarNotas = async (req, res) => {
         profesor_nombre: m.profesor_nombre,
         profesor_apellido: m.profesor_apellido,
         alumnos: Array.from(m.alumnos.values()).map(al => {
-          // Promedio trimestral
-          const trimestrales = al.notas
-            .map(n => Object.values(n.calificaciones)
+          // Promedio por trimestre (truncado)
+          const promediosTrimestrales = al.notas.map(n => {
+            const notasValidas = Object.values(n.calificaciones)
               .map(x => parseFloat(x))
-              .filter(x => !isNaN(x))
-            )
-            .flat();
+              .filter(x => !isNaN(x));
+            if (notasValidas.length === 0) return null;
+            const suma = notasValidas.reduce((a,b)=>a+b,0);
+            return Math.trunc((suma / notasValidas.length) * 100) / 100;
+          }).filter(x => x !== null);
 
-          let avg = null;
-          if (trimestrales.length) {
-            avg = trimestrales.reduce((a,b)=>a+b,0)/trimestrales.length;
-            avg = Math.trunc(avg*100)/100; // truncado a 2 decimales
+          // Promedio final
+          let final = null;
+          if (promediosTrimestrales.length) {
+            const sumaProm = promediosTrimestrales.reduce((a,b)=>a+b,0);
+            final = Math.trunc((sumaProm / promediosTrimestrales.length) * 100) / 100;
           }
 
+          // Exámenes
           const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
           const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
 
-          let final = avg; // por defecto promedio trimestral
+          if ((final === null || final < 6) && exDic !== null && exDic >= 6) final = exDic;
+          else if ((final === null || final < 6) && exMar !== null && exMar >= 6) final = exMar;
 
-          // Solo usar examen si avg <6 o no hay notas
-          if ((avg === null || avg < 6) && exDic !== null && exDic >= 6) final = exDic;
-          else if ((avg === null || avg < 6) && exMar !== null && exMar >= 6) final = exMar;
-
-          al.promedio_final = final !== null ? Math.trunc(final*100)/100 : null;
+          al.promedio_final = final;
 
         })
       }))

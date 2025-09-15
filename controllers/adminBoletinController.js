@@ -1,15 +1,18 @@
 
 const db = require('../config/db');
 
+function truncar2Decimales(valor) {
+  return Math.floor(valor * 100) / 100;
+}
 
 function calcularPromedioFinal(b) {
   // Notas trimestrales válidas
   const notasValidas = [b.trimestre_1, b.trimestre_2, b.trimestre_3].filter(n => n !== null);
 
-  // Promedio de los tres trimestres (truncado a 2 decimales)
   let promedio = null;
-  if (notasValidas.length) {
-    promedio = Math.trunc((notasValidas.reduce((a, c) => a + c, 0) / notasValidas.length) * 100) / 100;
+  if (notasValidas.length > 0) {
+    const suma = notasValidas.reduce((a, c) => a + c, 0);
+    promedio = truncar2Decimales(suma / notasValidas.length);
   }
 
   const exDic = b.examen_dic !== null ? parseFloat(b.examen_dic) : null;
