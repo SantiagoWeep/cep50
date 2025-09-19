@@ -125,23 +125,74 @@ input[type="number"] {
 /* En móviles (pantallas chicas) */
 @media (max-width: 768px) {
   .examen-esp {
-    display: none !important;
+    display: none;
+  }
+body {
+    font-size: 12px;
+    padding: 10px;
   }
 
- .celda-notas {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 columnas iguales */
-  gap: 4px; /* espacio entre inputs */
-  justify-items: center; /* centrar horizontal */
-  align-items: center;   /* centrar vertical */
-}
-.celda-notas input {
-  width: 40px;
-  font-size: 11px;
-  text-align: center;
-}
+  h1 {
+    font-size: 18px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  h3 {
+    font-size: 14px;
+  }
+
+  table {
+    font-size: 11px; /* menos espacio en toda la tabla */
+  }
+
+  th, td {
+    padding: 4px 2px; /* reducir padding horizontal y vertical */
+    font-size: 11px;
+  }
+
+  /* inputs más pequeños */
+  .celda-notas input {
+    width: 32px;
+    height: 22px;
+    font-size: 11px;
+    padding: 2px;
+  }
+
+  input.promedio-trimestre,
+  input.promedio-final {
+    width: 38px;
+    font-size: 11px;
+    padding: 2px;
+  }
+
+  input.examen {
+    width: 38px;
+    font-size: 11px;
+    padding: 2px;
+  }
+
+  /* Botón guardar más chico */
   button {
     font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  /* Nombre del alumno más angosto (pero visible) */
+  td:first-child, th:first-child {
+    max-width: 100px;
+    font-size: 11px;
+    
+    overflow: hidden;
+    text-overflow: ellipsis; 
+  }
+
+  /* compactar aún más celdas de trimestres */
+  .celda-notas {
+    grid-template-columns: repeat(2, 1fr); /* 2x2 inputs */
+    gap: 2px;
   }
 
 }
@@ -423,6 +474,22 @@ input[type="number"] {
       btn.innerText = 'Guardando...'; // opcional
     });
   });
+
+
+
+  
+document.addEventListener("DOMContentLoaded", () => {
+  const ahora = new Date();
+  const mes = ahora.getMonth() + 1; // 1-12
+
+  if ([12, 1, 3].includes(mes)) {
+    document.querySelectorAll(".examen-esp").forEach(el => {
+      el.style.setProperty("display", "table-cell");
+    });
+  }
+});
+
+
 </script>
 
 </body>
