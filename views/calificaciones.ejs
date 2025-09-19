@@ -3,6 +3,8 @@
   <link rel="icon" href="/images/pedilink-icono.png" type="image/png">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Calificaciones</title>
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
 
@@ -13,9 +15,14 @@
     padding: 20px;
   }
 
-  h1, h2, h3 {
+  h1, h3 {
     font-weight: 600;
     color: #333;
+  }
+
+  h2 {
+    color: #1976d2;
+    font-weight: 700;
   }
 
   table {
@@ -109,6 +116,40 @@ input[type="number"] {
   appearance: textfield;
 }
 
+
+/* Por defecto en escritorio */
+.examen-esp {
+  display: table-cell;
+}
+
+/* En móviles (pantallas chicas) */
+@media (max-width: 768px) {
+  .examen-esp {
+    display: none !important;
+  }
+
+ .celda-notas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columnas iguales */
+  gap: 4px; /* espacio entre inputs */
+  justify-items: center; /* centrar horizontal */
+  align-items: center;   /* centrar vertical */
+}
+.celda-notas input {
+  width: 40px;
+  font-size: 11px;
+  text-align: center;
+}
+  button {
+    font-size: 12px;
+  }
+
+}
+
+
+
+
+
 </style>
 
 </head>
@@ -141,9 +182,9 @@ input[type="number"] {
             <% [1, 2, 3].forEach(tri => { %>
               <th colspan="2">Trimestre <%= tri %></th>
             <% }) %>
-            <th>Ex. Dic.</th>
-            <th>Ex. Mar.</th>
-            <th>Promedio Final</th>
+            <th class="examen-esp">Ex. Dic.</th>
+            <th class="examen-esp">Ex. Mar.</th>
+            <th class="examen-esp">Promedio Final</th>
           </tr>
           <tr>
             <th></th>
@@ -151,7 +192,7 @@ input[type="number"] {
               <th>Notas</th>
               <th>Prom.</th>
             <% }) %>
-            <th></th><th></th><th></th>
+            <th class="examen-esp"></th><th class="examen-esp"></th><th class="examen-esp"></th>
           </tr>
         </thead>
 
@@ -161,7 +202,7 @@ input[type="number"] {
                 <td> <%= alumno.apellido %> <%= alumno.nombre %></td>
 
                 <% alumno.notas.forEach(nota => { %>
-                  <td>
+                  <td class="celda-notas">
                     <% for (let i = 1; i <= 4; i++) { %>
                       <input 
                         type="number" 
@@ -170,12 +211,10 @@ input[type="number"] {
                         placeholder="N<%= i %>" 
                         min="0" max="10" step="0.1" 
                         class="nota"
-                        style="width: 35px; display: inline-block; margin-right: 2px; font-size:11px;"
                       >
-
-
                     <% } %>
                   </td>
+
                   <td>
                     <input 
                       type="number" 
@@ -191,7 +230,7 @@ input[type="number"] {
                   </td>
                 <% }) %>
 
-                <td>
+                <td class="examen-esp">
                  <input 
                   type="number"
                   name="nota_<%= alumno.id %>_<%= curso.curso_id %>_<%= materia.materia_id %>_4_1"
@@ -199,7 +238,7 @@ input[type="number"] {
                   value="<%= alumno.examen_dic !== undefined ? alumno.examen_dic : '' %>"
                 />
                 </td>
-                <td>
+                <td class="examen-esp">
                   <input 
                   type="number"
                   name="nota_<%= alumno.id %>_<%= curso.curso_id %>_<%= materia.materia_id %>_4_2"
@@ -207,7 +246,7 @@ input[type="number"] {
                   value="<%= alumno.examen_mar !== undefined ? alumno.examen_mar : '' %>"
                 />
                 </td>
-                <td>
+                <td class="examen-esp">
                   <input 
                     type="number" 
                     readonly 
@@ -224,7 +263,7 @@ input[type="number"] {
       <% }) %>
     <% }) %>
 
-    <div style="text-align: center; margin-top: 20px;">
+    <div style="text-align: center; display: flex; justify-content: right">
       <button type="submit" formaction="/calificaciones/guardarNotas" class="btn-guardar">Guardar</button>     
     </div>
 
