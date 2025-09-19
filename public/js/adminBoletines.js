@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (verMasBtn) {
     verMasBtn.addEventListener('click', async (event) => {
       const btn = event.target;
-      const offset = parseInt(btn.getAttribute('data-offset'), 30);
+      const offset = parseInt(btn.getAttribute('data-offset'), 100);
       const q = inputBusqueda?.value.trim();
 
       let url = `/admin/boletines?offset=${offset}`;
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.disabled = true;
           btn.innerText = 'No hay más boletines';
         } else {
-          btn.setAttribute('data-offset', offset + 30);
+          btn.setAttribute('data-offset', offset + 100);
           btn.disabled = false;
           btn.textContent = 'Ver más';
         }

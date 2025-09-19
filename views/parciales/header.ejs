@@ -17,53 +17,54 @@
   <% const cursos = ["", "Primero", "Segundo", "Tercero", "Cuarto", "Quinto"]; %>
 
   <!-- En pantallas grandes: dentro del header -->
-  <div class="dropdown d-none d-lg-inline">
-    <button 
-      class="btn btn-secondary dropdown-toggle"  
-      type="button" 
-      id="dropdownFiltroCurso" 
-      data-bs-toggle="dropdown" 
-      aria-expanded="false"
-    >
-      <i class="bi bi-sort-down"></i> Filtrar por Curso
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownFiltroCurso" id="lista-cursos">
-      <% cursos.forEach(c => { %>
-        <li>
-          <a class="dropdown-item <%= cursoSeleccionado === c ? 'active' : '' %>" 
-             href="#" 
-             data-curso="<%= c %>">
-            <%= c || "Todos" %>
-          </a>
-        </li>
-      <% }) %>
-    </ul>
-  </div>
+<div class="dropdown d-none d-lg-inline">
+  <button 
+    class="btn btn-secondary dropdown-toggle"  
+    type="button" 
+    id="dropdownFiltroCurso" 
+    data-bs-toggle="dropdown" 
+    aria-expanded="false"
+  >
+    <i class="bi bi-sort-down"></i> Filtrar
+  </button>
+  <ul class="dropdown-menu" aria-labelledby="dropdownFiltroCurso" id="lista-cursos">
+    <% cursos.forEach(c => { %>
+      <li>
+        <a class="dropdown-item <%= cursoSeleccionado === c ? 'active' : '' %>" 
+           href="#" 
+           data-curso="<%= c %>">
+          <%= c || "Todos" %>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+</div>
 
-  <!-- En móviles: flotante arriba -->
-  <div class="dropdown d-lg-none">
-    <button 
-      class="btn btn-secondary dropdown-toggle position-fixed"  
-      style="top: 70px; left: 20px; z-index: 1080;"
-      type="button" 
-      id="dropdownFiltroCursoMovil" 
-      data-bs-toggle="dropdown" 
-      aria-expanded="false"
-    >
-      <i class="bi bi-sort-down"></i>
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownFiltroCursoMovil" id="lista-cursos-movil">
-      <% cursos.forEach(c => { %>
-        <li>
-          <a class="dropdown-item <%= cursoSeleccionado === c ? 'active' : '' %>" 
-             href="#" 
-             data-curso="<%= c %>">
-            <%= c || "Todos" %>
-          </a>
-        </li>
-      <% }) %>
-    </ul>
-  </div>
+<!-- En móviles: flotante arriba a la derecha -->
+<div class="dropdown d-lg-none">
+  <button 
+    class="btn btn-secondary dropdown-toggle position-fixed"  
+    style="top: 10px; right: 20px; z-index: 1080;"
+    type="button" 
+    id="dropdownFiltroCursoMovil" 
+    data-bs-toggle="dropdown" 
+    aria-expanded="false"
+  >
+    <i class="bi bi-sort-down"></i>
+  </button>
+  <ul class="dropdown-menu" aria-labelledby="dropdownFiltroCursoMovil" id="lista-cursos-movil">
+    <% cursos.forEach(c => { %>
+      <li>
+        <a class="dropdown-item <%= cursoSeleccionado === c ? 'active' : '' %>" 
+           href="#" 
+           data-curso="<%= c %>">
+          <%= c || "Todos" %>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+</div>
+
 <% } %>
 
 
@@ -80,7 +81,7 @@
   <!-- En móviles: botón flotante -->
   <button 
     class="btn btn-primary d-lg-none position-fixed" 
-    style="top: 20px; right: 20px; z-index: 1080;" 
+    style="top: 10px; right: 20px; z-index: 1080;" 
     data-bs-toggle="modal" 
     data-bs-target="#<%= idModalAgregar %>"
   >

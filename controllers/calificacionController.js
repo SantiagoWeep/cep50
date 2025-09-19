@@ -122,61 +122,80 @@ exports.mostrarListaAlumnos = async (req, res) => {
 };
 
 
-exports.guardarNotas = async (req, res) => {
-  if (!req.profesor) return res.status(401).send('No autorizado');
-  const profesorId = parseInt(req.profesor.id, 10);
 
+exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
   const clavesEnviadas = new Set();
 
+  // Recolectar claves válidas y datos para insertar
   for (const key in data) {
-  if (key.startsWith('nota_')) {
-    const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
-    const valorRaw = data[key];
+    if (key.startsWith('nota_')) {
+      const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
+      const valorRaw = data[key];
 
-    let nota = null;
-    if (valorRaw !== '' && valorRaw !== null && typeof valorRaw !== 'undefined') {
-      const parsed = parseFloat(valorRaw);
-      if (!isNaN(parsed)) nota = parsed;
-    }
+      // Ignorar campos vacíos
+      if (valorRaw === '' || valorRaw === null || typeof valorRaw === 'undefined') continue;
 
-    if ([1,2,3,4].includes(+trimestreStr) && [1,2,3,4].includes(+numeroStr)) {
-      clavesEnviadas.add(`${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`);
-      
-      if (nota !== null) {
-        inserts.push([alumnoId, cursoId, materiaId, +trimestreStr, +numeroStr, nota]);
-      } else {
-        // Nota borrada: poner NULL en la DB
-        await db.query(`
-          UPDATE notas 
-          SET nota = NULL, guardado = TRUE 
-          WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
-        `, [alumnoId, cursoId, materiaId, +trimestreStr, +numeroStr]);
+      const nota = parseFloat(valorRaw);
+      if (
+        !isNaN(nota) &&
+        [1, 2, 3, 4].includes(parseInt(trimestreStr)) &&
+        [1, 2, 3, 4].includes(parseInt(numeroStr))
+      ) {
+        inserts.push([
+          alumnoId,
+          cursoId,
+          materiaId,
+          parseInt(trimestreStr),
+          parseInt(numeroStr),
+          nota
+        ]);
+
+        const clave = `${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`;
+        clavesEnviadas.add(clave);
       }
     }
   }
-}
-
 
   try {
-    const alumnosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[0]))];
-    const cursosIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[1]))];
-    const materiasIds = [...new Set(Array.from(clavesEnviadas).map(c => c.split('_')[2]))];
+    // Obtener todas las notas existentes para los alumnos, cursos y materias involucrados
+    const [notasExistentes] = await db.query(`
+      SELECT alumno_id, curso_id, materia_id, trimestre, numero
+      FROM notas
+    `);
 
-    // Filtrar solo las notas no nulas para insertar
-    const insertsFiltradas = inserts.filter(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) => nota !== null);
+    // Detectar cuáles deben eliminarse
+    const deletes = [];
+    for (const nota of notasExistentes) {
+      const clave = `${nota.alumno_id}_${nota.curso_id}_${nota.materia_id}_${nota.trimestre}_${nota.numero}`;
+      if (!clavesEnviadas.has(clave)) {
+        deletes.push([
+          nota.alumno_id,
+          nota.curso_id,
+          nota.materia_id,
+          nota.trimestre,
+          nota.numero
+        ]);
+      }
+    }
 
+    // Ejecutar deletes
+    for (const del of deletes) {
+      await db.query(`
+        DELETE FROM notas 
+        WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
+      `, del);
+    }
 
-    if (insertsFiltradas.length > 0) {
-      const values = insertsFiltradas
-        .map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
-          `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE, ${profesorId})`
-        )
-        .join(',');
+    // Insertar o actualizar las notas nuevas
+    if (inserts.length > 0) {
+      const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
+        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE)`
+      ).join(',');
 
       const queryNotas = `
-        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado, profesor_id)
+        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado)
         VALUES ${values}
         ON DUPLICATE KEY UPDATE 
           nota = VALUES(nota), 
@@ -186,48 +205,49 @@ exports.guardarNotas = async (req, res) => {
       await db.query(queryNotas);
     }
 
+    // Actualizar boletines como antes
     const updateBoletinesQuery = `
       INSERT INTO boletines (
-          alumno_id, curso_id, materia_id,
-          trimestre_1, trimestre_2, trimestre_3,
-          examen_dic, examen_mar, promedio_final
+        alumno_id, curso_id, materia_id,
+        trimestre_1, trimestre_2, trimestre_3,
+        examen_dic, examen_mar, promedio_final
       )
       SELECT 
-          n.alumno_id,
-          n.curso_id,
-          n.materia_id,
-          TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
-          TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
-          TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
-          MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
-          MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
-          TRUNCATE(
-              CASE
-                  WHEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END) >= 6 THEN 
-                      AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
-                  WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
-                      MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
-                  WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
-                      MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
-                  ELSE AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
-              END, 2
-          )
+        n.alumno_id,
+        n.curso_id,
+        n.materia_id,
+        TRUNCATE(AVG(CASE WHEN n.trimestre = 1 THEN n.nota END), 2),
+        TRUNCATE(AVG(CASE WHEN n.trimestre = 2 THEN n.nota END), 2),
+        TRUNCATE(AVG(CASE WHEN n.trimestre = 3 THEN n.nota END), 2),
+        MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END),
+        MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
+        TRUNCATE(
+          CASE
+            WHEN AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END) >= 6 THEN 
+              AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
+              MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
+            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
+              MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
+            ELSE AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+          END
+        , 2)
       FROM notas n
       JOIN alumnos a ON a.id = n.alumno_id AND a.curso_id = n.curso_id
-      WHERE n.materia_id IN (?) AND n.curso_id IN (?) AND n.profesor_id = ?
       GROUP BY n.alumno_id, n.curso_id, n.materia_id
       ON DUPLICATE KEY UPDATE 
-          trimestre_1 = VALUES(trimestre_1),
-          trimestre_2 = VALUES(trimestre_2),
-          trimestre_3 = VALUES(trimestre_3),
-          examen_dic = VALUES(examen_dic),
-          examen_mar = VALUES(examen_mar),
-          promedio_final = VALUES(promedio_final);
+        trimestre_1 = VALUES(trimestre_1),
+        trimestre_2 = VALUES(trimestre_2),
+        trimestre_3 = VALUES(trimestre_3),
+        examen_dic = VALUES(examen_dic),
+        examen_mar = VALUES(examen_mar),
+        promedio_final = VALUES(promedio_final);
     `;
 
-    await db.query(updateBoletinesQuery, [materiasIds, cursosIds, profesorId]);
+    await db.query(updateBoletinesQuery);
 
     res.redirect('/calificaciones?guardado=1');
+
   } catch (err) {
     console.error('Error al guardar o actualizar boletines:', err);
     res.status(500).send('Error al guardar notas o boletines');

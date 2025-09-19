@@ -16,6 +16,34 @@
     margin-top: 30px;
     color: #343a40;
   }
+
+  @media (max-width: 576px) {
+  .table th, .table td {
+    font-size: 0.75rem; /* más chico para que entre */
+    padding: 0.25rem;   /* menos espacio */
+  }
+  h1, h2, h3 {
+    font-size: 15px;
+    margin: 10px;
+  }
+  .table th{
+    font-size: 10px;
+  }
+  main {
+    margin: 2px;
+    padding: 2px;
+  }
+  .contenido-principal {
+    margin: 4px;
+    padding: 4px;
+  }
+
+    .contenido-principal {
+    padding-top: 60px;
+  }
+    
+}
+
 </style>
 
 
@@ -29,19 +57,21 @@
       <% if(currentAlumno !== null) { %></tbody></table><hr><% } %>
 
       <h2>Boletín de <%= b.alumno_nombre %> <%= b.alumno_apellido %> - Curso: <%= b.curso_nombre %></h2>
-      <table class="table table-bordered table-striped">
-        <thead class="table-dark text-center">
-          <tr>
-            <th>Materia</th>
-            <th>1er Trimestre</th>
-            <th>2do Trimestre</th>
-            <th>3er Trimestre</th>
-            <th>Examen Diciembre</th>
-            <th>Examen Marzo</th>
-            <th>Promedio Final</th>
-          </tr>
-        </thead>
-        <tbody class="text-center align-middle">
+      <div class="table-responsive">
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark text-center">
+      <tr>
+        <th>Materia</th>
+        <th>1°T</th>
+        <th>2°T</th>
+        <th>3°T</th>
+        <th>Ex. Dic.</th>
+        <th>Ex. Mar.</th>
+        <th>Prom.</th>
+      </tr>
+    </thead>
+    <tbody class="text-center align-middle">
+
 
     <% } %>
 
@@ -60,4 +90,5 @@
   <% }) %>
   </tbody>
   </table>
+  </div>
 <% } %>

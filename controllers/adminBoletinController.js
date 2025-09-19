@@ -29,7 +29,8 @@ function calcularPromedioFinalBoletin(b) {
 
 exports.mostrarBoletines = async (req, res) => {
   const offset = parseInt(req.query.offset || 0);
-  const limit = 30;
+  const limit = 100;
+
   const curso = req.query.curso || '';
 
   try {
