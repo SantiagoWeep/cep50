@@ -24,13 +24,7 @@ function calcularPromedioFinalBoletin(b) {
 
   return promedio;
 }
-
-
-
 exports.mostrarBoletines = async (req, res) => {
-  const offset = parseInt(req.query.offset || 0);
-  const limit = 100;
-
   const curso = req.query.curso || '';
 
   try {
@@ -55,8 +49,7 @@ exports.mostrarBoletines = async (req, res) => {
       params.push(curso);
     }
 
-    query += ` ORDER BY c.orden, a.apellido, a.nombre, m.nombre LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    query += ` ORDER BY c.orden, a.apellido, a.nombre, m.nombre`;
 
     const [boletines] = await db.query(query, params);
 
@@ -65,11 +58,6 @@ exports.mostrarBoletines = async (req, res) => {
       promedio_final: calcularPromedioFinalBoletin(b)
     }));
 
-
-    if (req.xhr) {
-      return res.render('parciales/boletinesList', { boletines: boletinesConPromedio, layout: false });
-    }
-
     res.render('admin/boletines', {
       tipoBusqueda: 'DNI o Nombre',
       idInputBusqueda: 'input-busqueda',
@@ -77,7 +65,6 @@ exports.mostrarBoletines = async (req, res) => {
       idModalAgregar: '',
       mostrarFiltroCurso: true,
       boletines: boletinesConPromedio,
-      offset,
       search: req.query.q || '',
       cursoSeleccionado: curso
     });
