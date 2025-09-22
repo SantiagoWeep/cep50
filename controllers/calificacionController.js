@@ -127,6 +127,8 @@ exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
   const clavesEnviadas = new Set();
+  const profesorId = req.user?.id || 1; // fallback para pruebas
+
 
   // Recolectar claves válidas y datos para insertar
   for (const key in data) {
@@ -180,30 +182,22 @@ exports.guardarNotas = async (req, res) => {
       }
     }
 
-    // Ejecutar deletes
-    for (const del of deletes) {
-      await db.query(`
-        DELETE FROM notas 
-        WHERE alumno_id = ? AND curso_id = ? AND materia_id = ? AND trimestre = ? AND numero = ?
-      `, del);
-    }
-
-    // Insertar o actualizar las notas nuevas
     if (inserts.length > 0) {
-      const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
-        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE)`
-      ).join(',');
+  const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
+    `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE, ${profesorId})`
+  ).join(',');
 
-      const queryNotas = `
-        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado)
-        VALUES ${values}
-        ON DUPLICATE KEY UPDATE 
-          nota = VALUES(nota), 
-          guardado = TRUE;
-      `;
+  const queryNotas = `
+    INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado, profesor_id)
+    VALUES ${values}
+    ON DUPLICATE KEY UPDATE 
+      nota = VALUES(nota),
+      guardado = TRUE,
+      profesor_id = VALUES(profesor_id);
+  `;
+  await db.query(queryNotas);
+}
 
-      await db.query(queryNotas);
-    }
 
     // Actualizar boletines como antes
     const updateBoletinesQuery = `
