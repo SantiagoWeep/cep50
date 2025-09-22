@@ -127,6 +127,8 @@ exports.guardarNotas = async (req, res) => {
   const data = req.body;
   const inserts = [];
   const clavesEnviadas = new Set();
+  const profesorId = req.profesor?.id;
+
 
   // Recolectar claves válidas y datos para insertar
   for (const key in data) {
@@ -149,7 +151,8 @@ exports.guardarNotas = async (req, res) => {
           materiaId,
           parseInt(trimestreStr),
           parseInt(numeroStr),
-          nota
+          nota,
+          profesorId
         ]);
 
         const clave = `${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`;
@@ -190,13 +193,15 @@ exports.guardarNotas = async (req, res) => {
 
     // Insertar o actualizar las notas nuevas
     if (inserts.length > 0) {
-      const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
-        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE)`
+      const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota, profesorId]) =>
+        `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE, ${profesorId})`
       ).join(',');
 
+
       const queryNotas = `
-        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado)
+        INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado, profesor_id)
         VALUES ${values}
+
         ON DUPLICATE KEY UPDATE 
           nota = VALUES(nota), 
           guardado = TRUE;
