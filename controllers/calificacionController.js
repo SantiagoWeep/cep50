@@ -121,85 +121,45 @@ exports.mostrarListaAlumnos = async (req, res) => {
   }
 };
 
-
-
 exports.guardarNotas = async (req, res) => {
   const data = req.body;
-  const inserts = [];
-  const clavesEnviadas = new Set();
   const profesorId = req.user?.id || 1; // fallback para pruebas
+  const inserts = [];
 
-
-  // Recolectar claves válidas y datos para insertar
+  // Recolectar todas las notas enviadas
   for (const key in data) {
     if (key.startsWith('nota_')) {
       const [, alumnoId, cursoId, materiaId, trimestreStr, numeroStr] = key.split('_');
       const valorRaw = data[key];
 
-      // Ignorar campos vacíos
-      if (valorRaw === '' || valorRaw === null || typeof valorRaw === 'undefined') continue;
+      if (!valorRaw) continue;
 
       const nota = parseFloat(valorRaw);
-      if (
-        !isNaN(nota) &&
-        [1, 2, 3, 4].includes(parseInt(trimestreStr)) &&
-        [1, 2, 3, 4].includes(parseInt(numeroStr))
-      ) {
-        inserts.push([
-          alumnoId,
-          cursoId,
-          materiaId,
-          parseInt(trimestreStr),
-          parseInt(numeroStr),
-          nota
-        ]);
+      const trimestre = parseInt(trimestreStr);
+      const numero = parseInt(numeroStr);
 
-        const clave = `${alumnoId}_${cursoId}_${materiaId}_${trimestreStr}_${numeroStr}`;
-        clavesEnviadas.add(clave);
+      if (!isNaN(nota) && trimestre >= 1 && trimestre <= 4 && numero >= 1 && numero <= 4) {
+        inserts.push({ alumnoId, cursoId, materiaId, trimestre, numero, nota });
       }
     }
   }
 
   try {
-    // Obtener todas las notas existentes para los alumnos, cursos y materias involucrados
-    const [notasExistentes] = await db.query(`
-      SELECT alumno_id, curso_id, materia_id, trimestre, numero
-      FROM notas
-    `);
-
-    // Detectar cuáles deben eliminarse
-    const deletes = [];
-    for (const nota of notasExistentes) {
-      const clave = `${nota.alumno_id}_${nota.curso_id}_${nota.materia_id}_${nota.trimestre}_${nota.numero}`;
-      if (!clavesEnviadas.has(clave)) {
-        deletes.push([
-          nota.alumno_id,
-          nota.curso_id,
-          nota.materia_id,
-          nota.trimestre,
-          nota.numero
-        ]);
-      }
+    // Insertar o actualizar cada nota individualmente
+    for (const n of inserts) {
+      const sql = `
+        INSERT INTO notas 
+          (alumno_id, curso_id, materia_id, trimestre, numero, profesor_id, nota)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+          nota = VALUES(nota),
+          profesor_id = VALUES(profesor_id),
+          guardado = TRUE;
+      `;
+      await db.query(sql, [n.alumnoId, n.cursoId, n.materiaId, n.trimestre, n.numero, profesorId, n.nota]);
     }
 
-    if (inserts.length > 0) {
-  const values = inserts.map(([alumnoId, cursoId, materiaId, trimestre, numero, nota]) =>
-    `(${alumnoId}, ${cursoId}, ${materiaId}, ${trimestre}, ${numero}, ${nota}, TRUE, ${profesorId})`
-  ).join(',');
-
-  const queryNotas = `
-    INSERT INTO notas (alumno_id, curso_id, materia_id, trimestre, numero, nota, guardado, profesor_id)
-    VALUES ${values}
-    ON DUPLICATE KEY UPDATE 
-      nota = VALUES(nota),
-      guardado = TRUE,
-      profesor_id = VALUES(profesor_id);
-  `;
-  await db.query(queryNotas);
-}
-
-
-    // Actualizar boletines como antes
+    // Actualizar boletines
     const updateBoletinesQuery = `
       INSERT INTO boletines (
         alumno_id, curso_id, materia_id,
@@ -217,13 +177,10 @@ exports.guardarNotas = async (req, res) => {
         MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END),
         TRUNCATE(
           CASE
-            WHEN AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END) >= 6 THEN 
-              AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
-            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN 
-              MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
-            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN 
-              MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
-            ELSE AVG(CASE WHEN n.trimestre IN (1, 2, 3) THEN n.nota END)
+            WHEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END) >= 6 THEN AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
+            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END) >= 6 THEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 1 THEN n.nota END)
+            WHEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END) >= 6 THEN MAX(CASE WHEN n.trimestre = 4 AND n.numero = 2 THEN n.nota END)
+            ELSE AVG(CASE WHEN n.trimestre IN (1,2,3) THEN n.nota END)
           END
         , 2)
       FROM notas n
@@ -237,13 +194,11 @@ exports.guardarNotas = async (req, res) => {
         examen_mar = VALUES(examen_mar),
         promedio_final = VALUES(promedio_final);
     `;
-
     await db.query(updateBoletinesQuery);
 
     res.redirect('/calificaciones?guardado=1');
-
   } catch (err) {
-    console.error('Error al guardar o actualizar boletines:', err);
+    console.error('Error al guardar notas o boletines:', err);
     res.status(500).send('Error al guardar notas o boletines');
   }
 };
