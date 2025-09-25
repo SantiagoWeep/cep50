@@ -4,19 +4,18 @@ const db = require('../config/db');
 exports.renderLoginAlumno = (req, res) => {
   res.render('loginAlumno', { layout: false }); // ← esto evita el layout
 };
-
 exports.loginAlumno = async (req, res) => {
   const { usuario, password } = req.body;
 
   if (usuario !== '123') {
-    return res.status(401).send('Usuario incorrecto');
+    return res.status(401).json({ error: 'Usuario incorrecto' });
   }
 
   try {
     const [results] = await db.query('SELECT * FROM alumnos WHERE dni = ?', [password]);
 
     if (results.length === 0) {
-      return res.status(401).send('DNI no encontrado');
+      return res.status(401).json({ error: 'DNI no encontrado' });
     }
 
     const alumno = results[0];
@@ -32,10 +31,10 @@ exports.loginAlumno = async (req, res) => {
     );
 
     res.cookie('tokenAlumno', token, { httpOnly: true });
-    res.redirect('/boletin');
+    res.redirect('/boletin'); // éxito → redirige
   } catch (err) {
     console.error('Error en DB:', err);
-    res.status(500).send('Error en DB');
+    res.status(500).json({ error: 'Error en DB' });
   }
 };
 

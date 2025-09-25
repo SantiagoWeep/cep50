@@ -12,21 +12,17 @@ exports.login = async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    // Verificar contraseña fija
     if (password !== PROFES_PASSWORD) {
-      return res.status(401).send('Contraseña incorrecta');
+      return res.status(401).json({ error: 'Contraseña incorrecta' });
     }
 
-    // Buscar al profesor por DNI
     const [results] = await db.query('SELECT * FROM profesores WHERE dni = ?', [usuario]);
-
     if (results.length === 0) {
-      return res.status(401).send('DNI no encontrado');
+      return res.status(401).json({ error: 'DNI no encontrado' });
     }
 
     const profesor = results[0];
 
-    // Generar token
     const token = jwt.sign(
       {
         id: profesor.id,
@@ -39,12 +35,13 @@ exports.login = async (req, res) => {
     );
 
     res.cookie('token', token, { httpOnly: true });
-    res.redirect('/calificaciones');
+    res.redirect('/calificaciones'); // solo si todo salió bien
   } catch (err) {
     console.error('Error en DB:', err);
-    res.status(500).send('Error en DB');
+    res.status(500).json({ error: 'Error en DB' });
   }
 };
+
 
 exports.verifyToken = (req, res, next) => {
   const token = req.cookies.token;

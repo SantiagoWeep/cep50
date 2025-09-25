@@ -43,12 +43,10 @@ exports.mostrarBoletines = async (req, res) => {
     `;
 
     const params = [];
-
     if (curso) {
       query += ` WHERE c.nombre = ? `;
       params.push(curso);
     }
-
     query += ` ORDER BY c.orden, a.apellido, a.nombre, m.nombre`;
 
     const [boletines] = await db.query(query, params);
@@ -58,6 +56,12 @@ exports.mostrarBoletines = async (req, res) => {
       promedio_final: calcularPromedioFinalBoletin(b)
     }));
 
+    // 👉 Si viene con ?ajax=1 → solo devolvés el partial
+    if (req.query.ajax) {
+      return res.render('parciales/boletinesList', { boletines: boletinesConPromedio, layout: false });
+    }
+
+    // 👉 Si es carga normal → devolvés todo con header
     res.render('admin/boletines', {
       tipoBusqueda: 'DNI o Nombre',
       idInputBusqueda: 'input-busqueda',
@@ -74,6 +78,7 @@ exports.mostrarBoletines = async (req, res) => {
     res.status(500).send('Error al cargar boletines');
   }
 };
+
 
 
 

@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+  <link rel="icon" href="/images/pedilink-icono.png" type="image/png">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login Profesor</title>
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
       background: #f0f2f5;
@@ -44,7 +47,7 @@
 <body>
   <div class="login-container">
     <h2 class="login-title">Bienvenido Profesor</h2>
-    <form action="/login" method="POST" novalidate>
+    <form id="loginForm" novalidate>
       <div class="mb-3">
         <label for="usuario" class="form-label">DNI</label>
         <input type="text" id="usuario" name="usuario" class="form-control" placeholder="12345678" required autofocus />
@@ -57,5 +60,41 @@
     </form>
     <p class="text-muted">¿Olvidaste tu contraseña? <a href="#">Recuperar aquí</a></p>
   </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const usuario = document.getElementById("usuario").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario, password })
+        });
+
+       if (!res.ok) {
+          const data = await res.json();
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: data.error || "Error en login"
+          });
+        } else {
+          // Si el login es correcto, el backend ya hace redirect
+          window.location.href = "/calificaciones";
+        }
+
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo conectar con el servidor"
+        });
+      }
+    });
+  </script>
 </body>
 </html>

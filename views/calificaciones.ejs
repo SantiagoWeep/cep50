@@ -283,7 +283,7 @@ body {
                         name="nota_<%= alumno.id %>_<%= curso.curso_id %>_<%= materia.materia_id %>_<%= nota.trimestre %>_<%= i %>"
                         value="<%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '' %>" 
                         placeholder="N<%= i %>" 
-                        min="0" max="10" step="0.1" 
+                        min="0" max="10" step="0.01" 
                         class="nota"
                       >
                     <% } %>

@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const inputBusqueda = document.getElementById('input-busqueda');
+  const listaCursos = document.getElementById('lista-cursos');
   const contenedor = document.getElementById('boletines-container');
 
   // ---------------- Buscador en tiempo real ----------------
@@ -10,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         let url = q === ''
-          ? '/admin/boletines?offset=0'
-          : `/admin/boletines/buscar?q=${encodeURIComponent(q)}`;
+          ? '/admin/boletines?ajax=1'   // 👈 pedimos solo el partial
+          : `/admin/boletines/buscar?q=${encodeURIComponent(q)}&ajax=1`;
 
         const res = await fetch(url, {
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -23,21 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
 
-document.addEventListener('DOMContentLoaded', () => {
-  const listaCursos = document.getElementById('lista-cursos');
-  const contenedor = document.getElementById('boletines-container');
-
+  // ---------------- Filtro por curso ----------------
   if (listaCursos) {
     listaCursos.addEventListener('click', async (e) => {
       e.preventDefault();
+
       const curso = e.target.dataset.curso;
+      if (!curso) return;
 
       contenedor.innerHTML = ''; // Limpiamos contenido actual
 
       try {
-        const res = await fetch(`/admin/boletines?curso=${encodeURIComponent(curso || '')}`, {
+        const res = await fetch(`/admin/boletines?curso=${encodeURIComponent(curso)}&ajax=1`, {
           headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         const html = await res.text();
@@ -48,3 +47,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+

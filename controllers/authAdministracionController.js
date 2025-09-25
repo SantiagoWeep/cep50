@@ -1,41 +1,55 @@
 const jwt = require('jsonwebtoken');
 
+// Renderiza la vista de login
 exports.renderLoginAdministracion = (req, res) => {
-  res.render('loginAdministracion', { layout: false }); // Evita usar el layout general
+  res.render('loginAdministracion', { layout: false });
 };
 
-
+// Login de administración
 exports.loginAdministracion = (req, res) => {
   const { usuario, password } = req.body;
 
-  // Validar contra valores en .env
+  // Validar credenciales con .env
   if (
     usuario !== process.env.ADMIN_USUARIO ||
     password !== process.env.ADMIN_PASSWORD
   ) {
-    return res.status(401).send('Credenciales incorrectas');
+    return res.status(401).json({ error: 'Credenciales incorrectas' });
   }
 
-  // Firmar con JWT_SECRET_ADMIN
+  // Generar token JWT
   const token = jwt.sign({ rol: 'admin' }, process.env.JWT_SECRET_ADMIN, {
     expiresIn: '1h',
   });
 
-  // Guardar cookie httpOnly para seguridad
+  // Guardar token en cookie
   res.cookie('tokenAdmin', token, { httpOnly: true });
-  res.redirect('/administracion');
+
+  // Respuesta de éxito (el front redirige)
+  res.json({ success: true, redirect: '/administracion' });
 };
 
+// Middleware de verificación
 exports.verifyAdministracion = (req, res, next) => {
   const token = req.cookies.tokenAdmin;
   if (!token) return res.redirect('/loginAdministracion');
 
   try {
-    // Verificar con JWT_SECRET_ADMIN (la misma clave que al firmar)
     const decoded = jwt.verify(token, process.env.JWT_SECRET_ADMIN);
-    if (decoded.rol !== 'admin') throw new Error('No autorizado');
+
+    if (decoded.rol !== 'admin') {
+      throw new Error('No autorizado');
+    }
+
+    req.admin = decoded; // guardo info por si la querés usar
     next();
   } catch (err) {
     return res.redirect('/loginAdministracion');
   }
+};
+
+// Logout: borrar cookie
+exports.logoutAdministracion = (req, res) => {
+  res.clearCookie('tokenAdmin');
+  res.redirect('/loginAdministracion');
 };

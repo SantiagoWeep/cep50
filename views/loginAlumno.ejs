@@ -6,6 +6,7 @@
   <link rel="icon" href="/images/pedilink-icono.png" type="image/png">
   <title>Login Alumno</title>
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body {
       background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
@@ -81,7 +82,7 @@
 
   <div class="login-container">
     <h1>Ingreso al Boletín</h1>
-    <form action="/loginAlumno" method="POST">
+    <form id="loginForm">
       <div class="mb-3">
         <label for="usuario" class="form-label">Usuario:</label>
         <input type="text" name="usuario" class="form-control" required placeholder="Ingresa tu usuario">
@@ -98,6 +99,42 @@
     <p class="text-muted">¿Olvidaste tu contraseña? <a href="#">Recuperar aquí</a></p>
   </div>
 
+  <script>
+    const form = document.getElementById('loginForm');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const response = await fetch('/loginAlumno', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          return Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err.error || 'Error al iniciar sesión'
+          });
+        }
+
+        // si está todo bien, el backend manda redirect
+        window.location.href = '/boletin';
+
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo conectar con el servidor'
+        });
+      }
+    });
+  </script>
 </body>
 </html>
-
