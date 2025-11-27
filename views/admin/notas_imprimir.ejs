@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>  <%= materia.profesor %>-<%= materia.materia %>-Curso: <%= materia.curso %></title>
+
+<style>
+
+ @page {
+  margin: 6mm;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+h1 { text-align: center; margin-bottom: 1em; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 40px;
+  page-break-inside: avoid;
+}
+
+th, td {
+  border: 1px solid #000;
+  padding: 6px;
+  text-align: center;
+  font-size: 13px;
+}
+
+thead th {
+  background-color: #e6e6e6;
+  font-weight: bold;
+}
+
+/* COLUMNA DE ALUMNO MÁS ANCHA */
+td.col-alumno {
+  width: 320px;
+  text-align: left;
+  font-size: 13px;
+}
+
+/* Ajustes de las columnas de notas */
+.nota {
+  width: 95px;
+}
+
+.nota-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.nota-celda {
+  border: 1px solid #999;
+  padding: 3px 0;
+  background: #fff;
+  padding: 2px;
+}
+
+.promedio-trimestral {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  border: 2px solid #999;
+  width: 60px;
+  
+}
+
+.promedio-final {
+  background-color: #dcdcdc;
+  font-weight: bold;
+  border: 2px solid #777;
+  width: 70px;
+}
+
+.examen {
+  background: #f8f8f8;
+  font-weight: bold;
+  border: 1px solid #555;
+  width: 55px;
+}
+
+</style>
+
+</head>
+<body>
+
+<h1>Calificaciones 2025: CEP N° 50</h1>
+
+<div class="encabezado-curso">
+  <h2>Curso: <%= materia.curso %></h2>
+</div>
+
+<h3>Materia: <%= materia.materia %></h3>
+<div>Profesor: <%= materia.profesor %></div>
+<br>
+
+<table>
+
+  <thead>
+    <tr>
+      <th rowspan="2">Alumno</th>
+
+      <% for (let tri = 1; tri <= 3; tri++) { %>
+        <th colspan="2">Trimestre <%= tri %></th>
+      <% } %>
+
+      <th rowspan="2">Ex. Dic</th>
+      <th rowspan="2">Ex. Mar</th>
+      <th rowspan="2">Prom. Gral.</th>
+    </tr>
+
+    <tr>
+      <% for (let tri = 1; tri <= 3; tri++) { %>
+        <th>Notas</th>
+        <th>Prom.</th>
+      <% } %>
+    </tr>
+  </thead>
+
+  <tbody>
+
+  <% alumnos.forEach(alumno => { %>
+
+    <tr>
+      <td class="col-alumno">
+        <%= alumno.apellido %>, <%= alumno.nombre %>
+
+
+        </td>
+
+      <% alumno.notas.forEach(nota => { 
+          const arr = Object.values(nota.calificaciones)
+            .map(x => parseFloat(x))
+            .filter(x => !isNaN(x));
+
+          const prom = arr.length ? (arr.reduce((a,b)=>a+b,0) / arr.length).toFixed(2) : '-';
+      %>
+
+        <td class="nota">
+          <div class="nota-grid">
+            <% [1,2,3,4].forEach(i => { %>
+              <div class="nota-celda"><%= nota.calificaciones[i] ?? '-' %></div>
+            <% }) %>
+          </div>
+        </td>
+
+        <td class="promedio-trimestral"><%= prom %></td>
+
+      <% }) %>
+
+      <td class="examen"><%= alumno.examen_dic ?? '-' %></td>
+      <td class="examen"><%= alumno.examen_mar ?? '-' %></td>
+
+      <%
+        const todas = alumno.notas
+          .map(n => Object.values(n.calificaciones)
+            .map(x => parseFloat(x))
+            .filter(x => !isNaN(x))
+          )
+          .flat();
+
+        const general = todas.length
+          ? (todas.reduce((a,b)=>a+b,0) / todas.length).toFixed(2)
+          : '-';
+      %>
+
+      <td class="promedio-final"><%= general %></td>
+    </tr>
+
+  <% }) %>
+
+  </tbody>
+</table>
+<script>
+  window.onload = function () {
+    window.print();
+    setTimeout(() => window.close(), 300);
+  };
+</script>
+
+
+</body>
+</html>

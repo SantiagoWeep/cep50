@@ -217,11 +217,6 @@
 <% }) %>
 
 
-
-
-
-
-
       <td class="examen"><%= alumno.examen_dic !== undefined ? alumno.examen_dic : '-' %></td>
       <td class="examen"><%= alumno.examen_mar !== undefined ? alumno.examen_mar : '-' %></td>
 
@@ -260,6 +255,14 @@
 </tbody>
 
       </table>
+          <div class="text-end mt-2">
+      <a href="/admin/notas/imprimir/<%= curso.curso_id %>/<%= materia.materia_id %>" 
+        target="_blank"
+        class="btn btn-sm btn-secondary">
+        🖨️ Imprimir
+      </a>
+    </div>
+
     <% }) %>
   <% }) %>
   </div>

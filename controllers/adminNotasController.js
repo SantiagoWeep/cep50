@@ -287,3 +287,82 @@ exports.buscarNotas = async (req, res) => {
     res.status(500).send('Error en búsqueda');
   }
 };
+
+
+exports.imprimirNotas = async (req, res) => {
+  const { cursoId, materiaId } = req.params;
+
+  try {
+    const [results] = await db.query(`
+      SELECT 
+        c.id AS curso_id,
+        c.nombre AS curso,
+        m.id AS materia_id,
+        m.nombre AS materia_nombre,
+        p.nombre AS profesor_nombre,
+        p.apellido AS profesor_apellido,
+        a.id AS alumno_id,
+        a.nombre AS alumno_nombre,
+        a.apellido AS alumno_apellido,
+        n.trimestre,
+        n.numero,
+        TRUNCATE(n.nota, 2) AS nota
+      FROM curso_profesor_materia cpm
+      JOIN cursos c ON c.id = cpm.curso_id
+      JOIN materias m ON m.id = cpm.materia_id
+      JOIN profesores p ON p.id = cpm.profesor_id
+      JOIN alumnos a ON a.curso_id = c.id
+      LEFT JOIN notas n ON n.alumno_id = a.id AND n.curso_id = c.id AND n.materia_id = m.id
+      WHERE c.id = ? AND m.id = ?
+      ORDER BY a.apellido ASC, a.nombre ASC, n.trimestre, n.numero
+    `, [cursoId, materiaId]);
+
+    const alumnosMap = new Map();
+    let materiaInfo = null;
+
+    results.forEach(row => {
+      if (!materiaInfo) {
+        materiaInfo = {
+          curso: row.curso,
+          materia: row.materia_nombre,
+          profesor: row.profesor_nombre + " " + row.profesor_apellido
+        };
+      }
+
+      if (!alumnosMap.has(row.alumno_id)) {
+      alumnosMap.set(row.alumno_id, {
+        nombre: row.alumno_nombre,      // ← CORREGIDO
+        apellido: row.alumno_apellido,  // ← CORREGIDO
+        notas: [1,2,3].map(tri => ({
+          trimestre: tri,
+          calificaciones: {1:null,2:null,3:null,4:null}
+        })),
+        examen_dic: null,
+        examen_mar: null
+      });
+    }
+
+
+      const alumno = alumnosMap.get(row.alumno_id);
+
+      if (row.trimestre >= 1 && row.trimestre <= 3) {
+        alumno.notas[row.trimestre - 1].calificaciones[row.numero] = row.nota;
+      }
+
+      if (row.trimestre === 4) {
+        if (row.numero === 1) alumno.examen_dic = row.nota;
+        if (row.numero === 2) alumno.examen_mar = row.nota;
+      }
+    });
+
+    res.render('admin/notas_imprimir', {
+      materia: materiaInfo,
+      alumnos: Array.from(alumnosMap.values()),
+      layout: false
+    });
+
+  } catch (error) {
+    console.error("Error al generar impresión:", error);
+    res.status(500).send("Error al generar impresión");
+  }
+};
