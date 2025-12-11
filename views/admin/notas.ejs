@@ -195,63 +195,70 @@
 
         <tbody>
   <% materia.alumnos.forEach(alumno => { %>
-    <tr>
-      <td><%= alumno.nombre %> <%= alumno.apellido %></td>
+  <tr>
+    <td><%= alumno.nombre %> <%= alumno.apellido %></td>
 
-        <% alumno.notas.forEach(nota => { 
-  const notasValidas = Object.values(nota.calificaciones)
-    .map(n => parseFloat(n))
-    .filter(n => !isNaN(n));
-  const promedio = notasValidas.length 
-    ? Math.trunc((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 100) / 100
-    : '';
-%>
-  <td class="nota">
-    <div class="nota-grid">
-      <% [1, 2, 3, 4].forEach(i => { %>
-        <div class="nota-celda"><%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '-' %></div>
-      <% }) %>
-    </div>
-  </td>
-  <td class="promedio-trimestral"><%= promedio %></td>
-<% }) %>
+    <% // Cálculo CORREGIDO del promedio final (antes del loop de notas, para no repetir) %>
+    <% 
+      // 1. Calcular promedios truncados por trimestre
+      const promediosTrim = alumno.notas.map(nota => { 
+        const notasValidas = Object.values(nota.calificaciones)
+          .map(n => parseFloat(n))
+          .filter(n => !isNaN(n));
+        const promedioTri = notasValidas.length 
+          ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length)
+          : null;
+        return promedioTri !== null ? Math.trunc(promedioTri * 100) / 100 : null;
+      }).filter(p => p !== null);
 
+      // 2. Promedio de los promedios trimestrales, truncado
+      const avg = promediosTrim.length 
+        ? (promediosTrim.reduce((a, b) => a + b, 0) / promediosTrim.length)
+        : null;
+      let final = avg !== null ? Math.trunc(avg * 100) / 100 : null;
 
-      <td class="examen"><%= alumno.examen_dic !== undefined ? alumno.examen_dic : '-' %></td>
-      <td class="examen"><%= alumno.examen_mar !== undefined ? alumno.examen_mar : '-' %></td>
+      // 3. Lógica de exámenes (igual que antes)
+      const exDic = parseFloat(alumno.examen_dic);
+      const exMar = parseFloat(alumno.examen_mar);
 
-      <td class="promedio-final">
-        <% 
-          const trimestrales = alumno.notas
-            .map(n => Object.values(n.calificaciones)
-              .map(x => parseFloat(x))
-              .filter(x => !isNaN(x))
-            )
-            .flat();
+      if (final !== null && !isNaN(final) && final >= 6) {
+        final = final;
+      } else if (!isNaN(exDic) && exDic >= 6) {
+        final = exDic;
+      } else if (!isNaN(exMar) && exMar >= 6) {
+        final = exMar;
+      } else if (final !== null) {
+        final = final;
+      }
+    %>
 
-          const avg = trimestrales.length 
-            ? trimestrales.reduce((a, b) => a + b, 0) / trimestrales.length
-            : null;
-
-          const exDic = parseFloat(alumno.examen_dic);
-          const exMar = parseFloat(alumno.examen_mar);
-
-          let final = null;
-
-          if (avg !== null && !isNaN(avg) && avg >= 6) {
-            final = avg;
-          } else if (!isNaN(exDic) && exDic >= 6) {
-            final = exDic;
-          } else if (!isNaN(exMar) && exMar >= 6) {
-            final = exMar;
-          } else if (avg !== null) {
-            final = avg;
-          }
-        %>
-        <%= (final !== null && !isNaN(final)) ? (Math.trunc(final * 100) / 100) : '-' %>
+    <% // Ahora el loop para mostrar notas por trimestre (sin cambios, solo usa el promedio por tri) %>
+    <% alumno.notas.forEach(nota => { 
+      const notasValidas = Object.values(nota.calificaciones)
+        .map(n => parseFloat(n))
+        .filter(n => !isNaN(n));
+      const promedio = notasValidas.length 
+        ? Math.trunc((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length) * 100) / 100
+        : '';
+    %>
+      <td class="nota">
+        <div class="nota-grid">
+          <% [1, 2, 3, 4].forEach(i => { %>
+            <div class="nota-celda"><%= nota.calificaciones[i] !== null ? nota.calificaciones[i] : '-' %></div>
+          <% }) %>
+        </div>
       </td>
-    </tr>
-  <% }) %>
+      <td class="promedio-trimestral"><%= promedio %></td>
+    <% }) %>
+
+    <td class="examen"><%= alumno.examen_dic !== undefined ? alumno.examen_dic : '-' %></td>
+    <td class="examen"><%= alumno.examen_mar !== undefined ? alumno.examen_mar : '-' %></td>
+
+    <td class="promedio-final">
+      <%= (final !== null && !isNaN(final)) ? final : '-' %>
+    </td>
+  </tr>
+<% }) %>
 </tbody>
 
       </table>
