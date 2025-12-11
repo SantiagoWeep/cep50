@@ -160,6 +160,54 @@ const cursosArray = Object.values(cursos).map(c => ({
 
       // Guardar promedio final en el alumno
       al.promedio_final = calcularPromedioFinal(al);
+      // Al final de mostrarNotas y buscarNotas, justo antes del return:
+
+const cursosArray = Object.values(cursos).map(c => ({
+  curso_id: c.curso_id || null,
+  curso: c.curso,
+  materias: Object.values(c.materias).map(m => ({
+    materia_id: m.materia_id,
+    materia_nombre: m.materia_nombre,
+    profesor_nombre: m.profesor_nombre,
+    profesor_apellido: m.profesor_apellido,
+    alumnos: Array.from(m.alumnos.values())
+      .map(al => {
+        // Cálculo correcto de promedios trimestrales truncados
+        const promediosTrimestrales = al.notas.map(tri => {
+          const validas = Object.values(tri.calificaciones)
+            .map(n => parseFloat(n))
+            .filter(n => !isNaN(n));
+          if (validas.length === 0) return null;
+          const prom = validas.reduce((a,b) => a + b, 0) / validas.length;
+          return Math.trunc(prom * 100) / 100; // ← truncado a 2 decimales
+        }).filter(p => p !== null);
+
+        let final = null;
+        if (promediosTrimestrales.length > 0) {
+          const suma = promediosTrimestrales.reduce((a,b) => a + b, 0);
+          final = Math.trunc((suma / promediosTrimestrales.length) * 100) / 100;
+        }
+
+        const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
+        const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
+
+        if ((final === null || final < 6) && exDic !== null && exDic >= 6) final = exDic;
+        else if ((final === null || final < 6) && exMar !== null && exMar >= 6) final = exMar;
+
+        return {
+          ...al,
+          promedio_final: final // ← ya calculado correctamente
+        };
+      })
+      // ORDENAR POR APELLIDO + NOMBRE
+      .sort((a, b) => {
+        const apA = a.apellido.toLowerCase();
+        const apB = b.apellido.toLowerCase();
+        if (apA !== apB) return apA.localeCompare(apB);
+        return a.nombre.toLowerCase().localeCompare(b.nombre.toLowerCase());
+      })
+  }))
+}));
 
       return al; // <--- Muy importante retornar el objeto
     })
@@ -184,9 +232,12 @@ const cursosArray = Object.values(cursos).map(c => ({
   }
 };
 
-
 exports.buscarNotas = async (req, res) => {
-  const q = req.query.q || '';
+  const q = req.query.q?.trim() || '';
+
+  if (!q) {
+    return res.render('parciales/NotasList', { cursos: [], layout: false });
+  }
 
   try {
     const [results] = await db.query(`
@@ -210,23 +261,20 @@ exports.buscarNotas = async (req, res) => {
       JOIN alumnos a ON a.curso_id = c.id
       LEFT JOIN notas n ON n.alumno_id = a.id AND n.curso_id = c.id AND n.materia_id = m.id
       WHERE 
+        CONCAT(a.apellido, ' ', a.nombre) LIKE ? OR
+        CONCAT(a.nombre, ' ', a.apellido) LIKE ? OR
         m.nombre LIKE ? OR 
         p.nombre LIKE ? OR 
         p.apellido LIKE ?
-      ORDER BY c.id, m.id, a.id, n.trimestre, n.numero
-    `, [`%${q}%`, `%${q}%`, `%${q}%`]);
+      ORDER BY c.id, m.id, a.apellido, a.nombre, n.trimestre, n.numero
+    `, [`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`]);
 
     const cursos = {};
 
     results.forEach(row => {
       if (!cursos[row.curso_id]) {
-        cursos[row.curso_id] = {
-          curso_id: row.curso_id,
-          curso: row.curso,
-          materias: {}
-        };
+        cursos[row.curso_id] = { curso_id: row.curso_id, curso: row.curso, materias: {} };
       }
-
       const curso = cursos[row.curso_id];
 
       if (!curso.materias[row.materia_id]) {
@@ -238,7 +286,6 @@ exports.buscarNotas = async (req, res) => {
           alumnos: new Map()
         };
       }
-
       const materia = curso.materias[row.materia_id];
 
       if (!materia.alumnos.has(row.alumno_id)) {
@@ -248,28 +295,25 @@ exports.buscarNotas = async (req, res) => {
           apellido: row.alumno_apellido,
           notas: [1, 2, 3].map(tri => ({
             trimestre: tri,
-            calificaciones: { 1: null, 2: null, 3: null, 4: null }
+            calificaciones: {1: null, 2: null, 3: null, 4: null}
           })),
           examen_dic: null,
-          examen_mar: null,
+          examen_mar: null
         });
       }
 
       const alumno = materia.alumnos.get(row.alumno_id);
 
       if (row.trimestre >= 1 && row.trimestre <= 3 && row.numero >= 1 && row.numero <= 4) {
-        const trimestre = alumno.notas.find(n => n.trimestre === row.trimestre);
-        if (trimestre) {
-          trimestre.calificaciones[row.numero] = row.nota !== null ? Number(row.nota) : null;
-        }
+        alumno.notas[row.trimestre - 1].calificaciones[row.numero] = row.nota !== null ? Number(row.nota) : null;
       }
-
       if (row.trimestre === 4) {
-        if (row.numero === 1) alumno.examen_dic = row.nota !== null ? Number(row.nota) : null;
-        if (row.numero === 2) alumno.examen_mar = row.nota !== null ? Number(row.nota) : null;
+        if (row.numero === 1) alumno.examen_dic = row.nota;
+        if (row.numero === 2) alumno.examen_mar = row.nota;
       }
     });
 
+    // === CÁLCULO CORRECTO + ORDEN ALFABÉTICO ===
     const cursosArray = Object.values(cursos).map(c => ({
       curso: c.curso,
       materias: Object.values(c.materias).map(m => ({
@@ -277,17 +321,48 @@ exports.buscarNotas = async (req, res) => {
         profesor_nombre: m.profesor_nombre,
         profesor_apellido: m.profesor_apellido,
         alumnos: Array.from(m.alumnos.values())
+          .map(al => {
+            // Promedios trimestrales truncados
+            const promsTrim = al.notas.map(tri => {
+              const vals = Object.values(tri.calificaciones).filter(n => n !== null);
+              if (vals.length === 0) return null;
+              const prom = vals.reduce((a,b) => a + b, 0) / vals.length;
+              return Math.trunc(prom * 100) / 100;
+            }).filter(x => x !== null);
+
+            let final = promsTrim.length
+              ? Math.trunc((promsTrim.reduce((a,b)=>a+b,0) / promsTrim.length) * 100) / 100
+              : null;
+
+            const exDic = al.examen_dic;
+            const exMar = al.examen_mar;
+
+            if ((final === null || final < 6) && exDic >= 6) final = exDic;
+            else if ((final === null || final < 6) && exMar >= 6) final = exMar;
+
+            return { ...al, promedio_final: final };
+          })
+          // ORDENAR POR APELLIDO + NOMBRE
+          .sort((a, b) => {
+            const apA = a.apellido.toLowerCase();
+            const apB = b.apellido.toLowerCase();
+            if (apA !== apB) return apA.localeCompare(apB);
+            return a.nombre.toLowerCase().localeCompare(b.nombre.toLowerCase());
+          })
       }))
     }));
 
-    res.render('parciales/NotasList', { cursos: cursosArray, layout: false });
+    res.render('parciales/NotasList', { 
+        cursos: cursosArray, 
+        search: q,           // ← ¡AQUÍ ESTABA EL PROBLEMA!
+        layout: false 
+      });
 
   } catch (err) {
-    console.error('Error en búsqueda de notas:', err);
-    res.status(500).send('Error en búsqueda');
+    console.error('Error en búsqueda:', err);
+    res.status(500).send('Error');
   }
 };
-
 
 exports.imprimirNotas = async (req, res) => {
   const { cursoId, materiaId } = req.params;
@@ -344,6 +419,45 @@ exports.imprimirNotas = async (req, res) => {
 
 
       const alumno = alumnosMap.get(row.alumno_id);
+      // Dentro de imprimirNotas, después de llenar alumnosMap:
+
+const alumnosOrdenados = Array.from(alumnosMap.values())
+  .sort((a, b) => {
+    const apA = (a.apellido || '').toLowerCase();
+    const apB = (b.apellido || '').toLowerCase();
+    if (apA !== apB) return apA.localeCompare(apB);
+    return (a.nombre || '').toLowerCase().localeCompare(b.nombre || '');
+  });
+
+// Calculamos promedios correctos (truncados)
+alumnosOrdenados.forEach(al => {
+  const promediosTrim = al.notas.map(tri => {
+    const nums = Object.values(tri.calificaciones)
+      .map(n => parseFloat(n))
+      .filter(n => !isNaN(n));
+    if (nums.length === 0) return null;
+    return Math.trunc((nums.reduce((a,b)=>a+b,0) / nums.length) * 100) / 100;
+  }).filter(x => x !== null);
+
+  let final = promediosTrim.length 
+    ? Math.trunc((promediosTrim.reduce((a,b)=>a+b,0) / promediosTrim.length) * 100) / 100 
+    : null;
+
+  const exDic = al.examen_dic !== null ? parseFloat(al.examen_dic) : null;
+  null;
+  const exMar = al.examen_mar !== null ? parseFloat(al.examen_mar) : null;
+
+  if ((final === null || final < 6) && exDic >= 6) final = exDic;
+  else if ((final === null || final < 6) && exMar >= 6) final = exMar;
+
+  al.promedio_final = final;
+});
+
+res.render('admin/notas_imprimir', {
+  materia: materiaInfo,
+  alumnos: alumnosOrdenados, // ← ya ordenados y con promedio correcto
+  layout: false
+});
 
       if (row.trimestre >= 1 && row.trimestre <= 3) {
         alumno.notas[row.trimestre - 1].calificaciones[row.numero] = row.nota;
